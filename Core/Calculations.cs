@@ -18,6 +18,7 @@ namespace Billet
 
         double pi = Math.PI;
         double R_in;
+        double R_1; // внутренний радиус контакта = внутренний радиус зубьев корпуса + r_2 (радиус скругления зуба кропуса)
         double alfa;
         double alfa_2;
         public Calculations(Loads loads, Geometry geometry, Material material, ConcentratorRatios concentrator, Steps steps, Additions additions)
@@ -27,13 +28,23 @@ namespace Billet
             _loads = loads;
             _concentrator = concentrator;
             _steps = steps;
-           _additions = additions;
+            _additions = additions;
 
             SelectСrumple();
+            Console.WriteLine($"внутренний диаметр контакта {2 * R_1} мм");
+            Console.WriteLine($"внешний диаметр крышки {2 * _geometry.R_ex} мм");
+
+            Console.WriteLine($"________СРЕЗ______________");
             SelectShear("cap");
-            Console.WriteLine($" толщина зуба крышки {geometry.s_11} мм");
+            Console.WriteLine($"толщина зуба крышки {_geometry.s_11} мм");
             SelectShear("corpus");
-            Console.WriteLine($" толщина зуба корпуса {geometry.s_21} мм");
+            Console.WriteLine($"толщина зуба корпуса {_geometry.s_21} мм");
+
+            Console.WriteLine($"________ИЗГИБ______________");
+            SelectBend("cap");
+            Console.WriteLine($"толщина зуба крышки {_geometry.s_11} мм");
+            SelectBend("corpus");
+            Console.WriteLine($"толщина зуба корпуса {_geometry.s_21} мм");
         }
 
         bool СrumpleCheck(string type) // проверка на смятие
@@ -114,6 +125,45 @@ namespace Billet
             }
         }
 
+        bool BendCheck(string element, string type, double l, double s) // проверка на изгиб
+        {
+            var geometry = GetGeomCharacter(element, l, s);
+            double sigma = GetLoad(type) * GetConsole(element) / (geometry.Wx * _geometry.n) * _concentrator.BendConcentratorRatio;
+            switch (type)
+            {
+                case "w":
+                    if (sigma <= _material.Sigma_t)
+                    {
+                        //Console.WriteLine($"{_material.Sigma_t} > {sigma} - проходит");
+                        //Console.WriteLine($"Момент сопротивления {geometry.Wx} мм");
+                        return true;
+                    }
+                    else
+                    {
+                        //Console.WriteLine($"{_material.Sigma_t} < {sigma} - НЕ проходит");
+                        return false;
+                    }
+
+                case "t":
+                    if (sigma <= _material.Sigma_20)
+                    {
+                        //Console.WriteLine($"{_material.Sigma_20} > {sigma} - проходит");
+                        //Console.WriteLine($"Момент сопротивления {geometry.Wx} мм");
+                        return true;
+                    }
+                    else
+                    {
+                        //Console.WriteLine($"{_material.Sigma_20} < {sigma} - НЕ проходит");
+                        return false;
+                    }
+
+                default:
+                    {
+                        return false;
+                    }
+            }
+        }
+
         void SelectСrumple() // подбор внешнего радиуса зубьев крышки
         {
             while (!СrumpleCheck("w") || !СrumpleCheck("t"))
@@ -134,6 +184,26 @@ namespace Billet
                     break;
                 case "corpus":
                     while (!ShearCheck(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !ShearCheck(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
+                    {
+                        _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
+                    }
+                    break;
+                default: break;
+            }
+        }
+        void SelectBend(string element)  // подбор подбор толщины зуба из условия изгиба
+        {
+            switch (element)
+            {
+                case "cap":
+
+                    while (!BendCheck(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !BendCheck(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
+                    {
+                        _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
+                    }
+                    break;
+                case "corpus":
+                    while (!BendCheck(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !BendCheck(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
@@ -164,7 +234,7 @@ namespace Billet
         public double GetContactArea()
         {
             R_in = _geometry.D_pr / 2 + _geometry.p; // внутренний диаметр зубьев крышки
-            double R_1 = R_in + _geometry.b_pr + _geometry.r_2; // внутренний диаметр контакта зубьев
+            R_1 = R_in + _geometry.b_pr + _geometry.r_2; // внутренний диаметр контакта зубьев
             if (_geometry.R_ex == 0)
             {
                 _geometry.R_ex = R_1 + _geometry.r_3 * 2 + _geometry.r_2; // установка начального значения внешнего радиуса крышки
@@ -196,6 +266,22 @@ namespace Billet
                     break;
             }
             return l;
+        }
+
+        public double GetConsole(string element)
+        {
+            double L = 0;
+
+            switch (element)
+            {
+                case "cap":
+                    L = _geometry.b_pr + 2 * (_geometry.R_ex - R_1) / 3;
+                    break;
+                case "corpus":
+                    L = /*Math.Max(_geometry.h, _geometry.r_5) + */_geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
+                    break;
+            }
+            return L;
         }
 
         public (double A, double Jx, double Jy, double Wx, double Wy) GetGeomCharacter(string element, double l, double s)
@@ -334,8 +420,15 @@ namespace Billet
             //    Console.WriteLine(item);
             //}
             //Console.WriteLine("------------------------------");
+            if (A <= 0 || Jx <= 0 || Jy <= 0 || Wx <= 0 || Wy <= 0)
+            {
+                return (1, 1, 1, 1, 1);
+            }
+            else
+            {
+                return (A, Jx, Jy, Wx, Wy);
+            }
 
-            return (A, Jx, Jy, Wx, Wy);
         }
     }
 }

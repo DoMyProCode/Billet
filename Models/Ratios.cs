@@ -15,7 +15,7 @@ namespace Billet
 
     public class ConcentratorRatios
     {
-        public double BendConcentratorRatio { get; set; } = 1.3; // коэффициент учета концентраторов напряжений при работе на изгиб
+        public double BendConcentratorRatio { get; set; } = 1.0; // коэффициент учета концентраторов напряжений при работе на изгиб
         public double ShearConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на срез
         public double СrumpleConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на смятие
         public double TensileConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на растяжение
