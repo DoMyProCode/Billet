@@ -43,7 +43,7 @@ namespace Billet
             Console.WriteLine($"________ИЗГИБ______________");
             SelectBend("cap");
             Console.WriteLine($"толщина зуба крышки {_geometry.s_11} мм");
-            SelectBend("corpus");
+            SelectBend("corpus_22");
             Console.WriteLine($"толщина зуба корпуса {_geometry.s_21} мм");
         }
 
@@ -182,7 +182,7 @@ namespace Billet
                         _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
                     }
                     break;
-                case "corpus":
+                case "corpus_22":
                     while (!ShearCheck(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !ShearCheck(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
@@ -191,7 +191,7 @@ namespace Billet
                 default: break;
             }
         }
-        void SelectBend(string element)  // подбор подбор толщины зуба из условия изгиба
+        void SelectBend(string element)  // подбор толщины зуба из условия изгиба
         {
             switch (element)
             {
@@ -202,8 +202,14 @@ namespace Billet
                         _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
                     }
                     break;
-                case "corpus":
+                case "corpus_22":
                     while (!BendCheck(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !BendCheck(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
+                    {
+                        _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
+                    }
+                    break;
+                case "corpus_33":
+                    while (!BendCheck(element, "w", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_w) || !BendCheck(element, "t", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
@@ -261,7 +267,13 @@ namespace Billet
                 case "cap":
                     l = Round.RoundDownToStep(R_in * Math.Sin(alfa * pi / 10800), 1);
                     break;
-                case "corpus":
+                case "corpus_22":
+                    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
+                    break;
+                case "corpus_33":
+                    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
+                    break;
+                case "corpus_55":
                     l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
                     break;
             }
@@ -277,8 +289,14 @@ namespace Billet
                 case "cap":
                     L = _geometry.b_pr + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
-                case "corpus":
-                    L = /*Math.Max(_geometry.h, _geometry.r_5) + */_geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
+                case "corpus_22":
+                    L = _geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
+                    break;
+                case "corpus_33":
+                    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
+                    break;
+                case "corpus_55":
+                    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
             }
             return L;
@@ -305,7 +323,15 @@ namespace Billet
                     r_4 = _geometry.r_4;
                     z = _geometry.z;
                     break;
-                case "corpus":
+                case "corpus_22":
+                    f_3 = _geometry.f_5;
+                    f_4 = _geometry.f_6;
+                    break;
+                case "corpus_33":
+                    f_3 = _geometry.f_5;
+                    f_4 = _geometry.f_6;
+                    break;
+                case "corpus_55":
                     f_3 = _geometry.f_5;
                     f_4 = _geometry.f_6;
                     break;
