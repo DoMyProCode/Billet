@@ -44,7 +44,9 @@ namespace Billet
             SelectBend("cap");
             Console.WriteLine($"толщина зуба крышки {_geometry.s_11} мм");
             SelectBend("corpus_22");
-            Console.WriteLine($"толщина зуба корпуса {_geometry.s_21} мм");
+            Console.WriteLine($"толщина зуба корпуса из расчета в сечении 2-2 {_geometry.s_21} мм");
+            SelectBend("corpus_33");
+            Console.WriteLine($"толщина зуба корпуса из расчета в сечении 3-3 {_geometry.s_21} мм");
         }
 
         bool СrumpleCheck(string type) // проверка на смятие
@@ -271,11 +273,11 @@ namespace Billet
                     l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
                     break;
                 case "corpus_33":
-                    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
+                    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k + _geometry.r_5) * Math.Sin(alfa * pi / 10800), 1);
                     break;
-                case "corpus_55":
-                    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
-                    break;
+                //case "corpus_55":
+                //    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
+                //    break;
             }
             return l;
         }
@@ -290,14 +292,14 @@ namespace Billet
                     L = _geometry.b_pr + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
                 case "corpus_22":
-                    L = _geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
+                    L = _geometry.b_k + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
                 case "corpus_33":
-                    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
+                    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_k + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
-                case "corpus_55":
-                    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_r + 2 * (_geometry.R_ex - R_1) / 3;
-                    break;
+                //case "corpus_55":
+                //    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_k + 2 * (_geometry.R_ex - R_1) / 3;
+                //    break;
             }
             return L;
         }
@@ -331,10 +333,10 @@ namespace Billet
                     f_3 = _geometry.f_5;
                     f_4 = _geometry.f_6;
                     break;
-                case "corpus_55":
-                    f_3 = _geometry.f_5;
-                    f_4 = _geometry.f_6;
-                    break;
+                //case "corpus_55":
+                //    f_3 = _geometry.f_5;
+                //    f_4 = _geometry.f_6;
+                //    break;
             }
 
             List<double> Area = new List<double>();
