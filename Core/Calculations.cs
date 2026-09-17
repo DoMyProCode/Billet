@@ -51,7 +51,7 @@ namespace Billet
             Console.WriteLine($"внешний диаметр из расчета в сечении 5-5 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
         }
 
-        bool СrumpleCheck(string type) // проверка на смятие
+        bool CheckСrumple(string type) // проверка на смятие
         {
             double sigma = GetLoad(type) / GetContactArea() * _concentrator.СrumpleConcentratorRatio;
 
@@ -90,7 +90,7 @@ namespace Billet
             }
         }
 
-        bool ShearCheck(string element, string type, double l, double s) // проверка на срез
+        bool CheckShear(string element, string type, double l, double s) // проверка на срез
         {
             var geometry = GetGeomCharacter(element, l, s);
             double tau = GetLoad(type) / (geometry.A * _geometry.n) * _concentrator.ShearConcentratorRatio;
@@ -129,7 +129,7 @@ namespace Billet
             }
         }
 
-        bool BendCheck(string element, string type, double l, double s) // проверка на изгиб
+        bool CheckBend(string element, string type, double l, double s) // проверка на изгиб
         {
             double n = _geometry.n; // количество зубьев
             if (element == "corpus_55")
@@ -177,7 +177,7 @@ namespace Billet
 
         void SelectСrumple() // подбор внешнего радиуса зубьев крышки
         {
-            while (!СrumpleCheck("w") || !СrumpleCheck("t"))
+            while (!CheckСrumple("w") || !CheckСrumple("t"))
             {
                 _geometry.R_ex = _geometry.R_ex + _steps.СrumpleStep;
             }
@@ -188,13 +188,13 @@ namespace Billet
             {
                 case "cap":
 
-                    while (!ShearCheck(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !ShearCheck(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
+                    while (!CheckShear(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !CheckShear(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
                     {
                         _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
                     }
                     break;
                 case "corpus_22":
-                    while (!ShearCheck(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !ShearCheck(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
+                    while (!CheckShear(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !CheckShear(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
@@ -208,19 +208,19 @@ namespace Billet
             {
                 case "cap":
 
-                    while (!BendCheck(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !BendCheck(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
+                    while (!CheckBend(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !CheckBend(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
                     {
                         _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
                     }
                     break;
                 case "corpus_22":
-                    while (!BendCheck(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !BendCheck(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
+                    while (!CheckBend(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !CheckBend(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
                     break;
                 case "corpus_33":
-                    while (!BendCheck(element, "w", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_w) || !BendCheck(element, "t", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_t))
+                    while (!CheckBend(element, "w", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_w) || !CheckBend(element, "t", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
@@ -235,7 +235,7 @@ namespace Billet
                     double s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
                     double l = 2 * pi * (_geometry.R_ex + _geometry.b_k );
 
-                    while (!BendCheck(element, "w", l, s - _additions.c_corpus_w) || !BendCheck(element, "t", l, s - _additions.c_corpus_t))
+                    while (!CheckBend(element, "w", l, s - _additions.c_corpus_w) || !CheckBend(element, "t", l, s - _additions.c_corpus_t))
                     {
                         _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
                         s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
