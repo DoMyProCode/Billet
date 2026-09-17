@@ -47,8 +47,10 @@ namespace Billet
             Console.WriteLine($"толщина зуба корпуса из расчета в сечении 2-2 {_geometry.s_21} мм");
             SelectBend("corpus_33");
             Console.WriteLine($"толщина зуба корпуса из расчета в сечении 3-3 {_geometry.s_21} мм");
+            SelectTensile("corpus_34");
+            Console.WriteLine($"внешний диаметр из расчета на растяжение в сечении 3-4 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
             SelectBend("corpus_55");
-            Console.WriteLine($"внешний диаметр из расчета в сечении 5-5 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
+            Console.WriteLine($"внешний диаметр из расчета на изгиб в сечении 5-5 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
         }
 
         bool CheckСrumple(string type) // проверка на смятие
@@ -57,7 +59,7 @@ namespace Billet
 
             switch (type)
             {
-                case "w":
+                case "work":
                     if (sigma <= _material.Sigma_sm_t)
                     {
                         //Console.WriteLine($"{_material.Sigma_sm_t} > {sigma} - проходит");
@@ -70,7 +72,7 @@ namespace Billet
                         return false;
                     }
 
-                case "t":
+                case "test":
                     if (sigma <= _material.Sigma_sm_20)
                     {
                         //Console.WriteLine($"{_material.Sigma_sm_20} > {sigma} - проходит");
@@ -96,7 +98,7 @@ namespace Billet
             double tau = GetLoad(type) / (geometry.A * _geometry.n) * _concentrator.ShearConcentratorRatio;
             switch (type)
             {
-                case "w":
+                case "work":
                     if (tau <= _material.Tau_sr_t)
                     {
                         //Console.WriteLine($"{_material.Tau_sr_t} > {tau} - проходит");
@@ -109,7 +111,7 @@ namespace Billet
                         return false;
                     }
 
-                case "t":
+                case "test":
                     if (tau <= _material.Tau_sr_20)
                     {
                         //Console.WriteLine($"{_material.Tau_sr_20} > {tau} - проходит");
@@ -142,7 +144,7 @@ namespace Billet
 
             switch (type)
             {
-                case "w":
+                case "work":
                     if (sigma <= _material.Sigma_t)
                     {
                         //Console.WriteLine($"{_material.Sigma_t} > {sigma} - проходит");
@@ -155,7 +157,7 @@ namespace Billet
                         return false;
                     }
 
-                case "t":
+                case "test":
                     if (sigma <= _material.Sigma_20)
                     {
                         //Console.WriteLine($"{_material.Sigma_20} > {sigma} - проходит");
@@ -175,9 +177,42 @@ namespace Billet
             }
         }
 
+        bool CheckTensile(string element, string type, double area) // проверка на растяжение
+        {
+            double sigma = GetLoad(type) / area * _concentrator.TensileConcentratorRatio;
+
+            switch (type)
+            {
+                case "work":
+                    if (sigma <= _material.Sigma_ras_t)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                case "test":
+                    if (sigma <= _material.Sigma_ras_20)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+
+                default:
+                    {
+                        return false;
+                    }
+            }
+        }
+
         void SelectСrumple() // подбор внешнего радиуса зубьев крышки
         {
-            while (!CheckСrumple("w") || !CheckСrumple("t"))
+            while (!CheckСrumple("work") || !CheckСrumple("test"))
             {
                 _geometry.R_ex = _geometry.R_ex + _steps.СrumpleStep;
             }
@@ -188,13 +223,13 @@ namespace Billet
             {
                 case "cap":
 
-                    while (!CheckShear(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !CheckShear(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
+                    while (!CheckShear(element, "work", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !CheckShear(element, "test", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
                     {
                         _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
                     }
                     break;
                 case "corpus_22":
-                    while (!CheckShear(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !CheckShear(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
+                    while (!CheckShear(element, "work", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !CheckShear(element, "test", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
@@ -208,19 +243,19 @@ namespace Billet
             {
                 case "cap":
 
-                    while (!CheckBend(element, "w", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !CheckBend(element, "t", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
+                    while (!CheckBend(element, "work", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_w) || !CheckBend(element, "test", GetToothWidth(element), _geometry.s_11 - _additions.c_capTooth_t))
                     {
                         _geometry.s_11 = _geometry.s_11 + _steps.ToothStep;
                     }
                     break;
                 case "corpus_22":
-                    while (!CheckBend(element, "w", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !CheckBend(element, "t", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
+                    while (!CheckBend(element, "work", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_w) || !CheckBend(element, "test", GetToothWidth(element), _geometry.s_21 - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
                     break;
                 case "corpus_33":
-                    while (!CheckBend(element, "w", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_w) || !CheckBend(element, "t", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_t))
+                    while (!CheckBend(element, "work", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_w) || !CheckBend(element, "test", GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_t))
                     {
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
@@ -235,7 +270,7 @@ namespace Billet
                     double s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
                     double l = 2 * pi * (_geometry.R_ex + _geometry.b_k );
 
-                    while (!CheckBend(element, "w", l, s - _additions.c_corpus_w) || !CheckBend(element, "t", l, s - _additions.c_corpus_t))
+                    while (!CheckBend(element, "work", l, s - _additions.c_corpus_w) || !CheckBend(element, "test", l, s - _additions.c_corpus_t))
                     {
                         _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
                         s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
@@ -245,7 +280,31 @@ namespace Billet
             }
         }
 
+        void SelectTensile(string element)  // подбор внешнего диаметра из условия растяжения
+        {
+            switch (element)
+            {
+                case "corpus_34":
 
+                    if (_geometry.D_corp_ex <= (_geometry.R_ex + _geometry.b_k) * 2)
+                    {
+                        _geometry.D_corp_ex = (_geometry.R_ex + _geometry.b_k) * 2 + 2;
+                    }
+
+                    double areaWork = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_w, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_w, 2));
+                    double areaTest = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_t, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_t, 2));
+
+                    while (!CheckTensile(element, "work", areaWork) || !CheckTensile(element, "test", areaTest))
+                    {
+                        _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
+
+                        areaWork = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_w, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_w, 2));
+                        areaTest = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_t, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_t, 2));
+                    }
+                    break;
+                default: break;
+            }
+        }
 
         public double GetLoad(string type)
         {
@@ -255,8 +314,8 @@ namespace Billet
 
             switch (type)
             {
-                case "w": P = _loads.WorkPressure; break;
-                case "t": P = _loads.TestPressure; break;
+                case "work": P = _loads.WorkPressure; break;
+                case "test": P = _loads.TestPressure; break;
             }
 
             F = Round.RoundUpToStep(S * P, 1); // сила на крышке от давления, Н
