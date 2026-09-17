@@ -47,6 +47,8 @@ namespace Billet
             Console.WriteLine($"толщина зуба корпуса из расчета в сечении 2-2 {_geometry.s_21} мм");
             SelectBend("corpus_33");
             Console.WriteLine($"толщина зуба корпуса из расчета в сечении 3-3 {_geometry.s_21} мм");
+            SelectBend("corpus_55");
+            Console.WriteLine($"внешний диаметр из расчета в сечении 5-5 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
         }
 
         bool СrumpleCheck(string type) // проверка на смятие
@@ -129,8 +131,15 @@ namespace Billet
 
         bool BendCheck(string element, string type, double l, double s) // проверка на изгиб
         {
+            double n = _geometry.n; // количество зубьев
+            if (element == "corpus_55")
+            {
+                n = 1;
+            }
+
             var geometry = GetGeomCharacter(element, l, s);
-            double sigma = GetLoad(type) * GetConsole(element) / (geometry.Wx * _geometry.n) * _concentrator.BendConcentratorRatio;
+            double sigma = GetLoad(type) * GetConsole(element) / (geometry.Wx * n) * _concentrator.BendConcentratorRatio;
+
             switch (type)
             {
                 case "w":
@@ -216,6 +225,22 @@ namespace Billet
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
                     break;
+                case "corpus_55":
+
+                    if (_geometry.D_corp_ex <= (_geometry.R_ex + _geometry.b_k) * 2)
+                    {
+                        _geometry.D_corp_ex = (_geometry.R_ex + _geometry.b_k) * 2 + 2;
+                    }
+
+                    double s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
+                    double l = 2 * pi * (_geometry.R_ex + _geometry.b_k );
+
+                    while (!BendCheck(element, "w", l, s - _additions.c_corpus_w) || !BendCheck(element, "t", l, s - _additions.c_corpus_t))
+                    {
+                        _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
+                        s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
+                    }
+                    break;
                 default: break;
             }
         }
@@ -275,9 +300,6 @@ namespace Billet
                 case "corpus_33":
                     l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k + _geometry.r_5) * Math.Sin(alfa * pi / 10800), 1);
                     break;
-                //case "corpus_55":
-                //    l = Round.RoundDownToStep((_geometry.R_ex + _geometry.b_k) * Math.Sin(alfa * pi / 10800), 1);
-                //    break;
             }
             return l;
         }
@@ -297,9 +319,9 @@ namespace Billet
                 case "corpus_33":
                     L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_k + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
-                //case "corpus_55":
-                //    L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_k + 2 * (_geometry.R_ex - R_1) / 3;
-                //    break;
+                case "corpus_55":
+                    L = (_geometry.D_corp_ex / 2 - (_geometry.D_nom - (_geometry.R_ex + _geometry.b_k)) - _geometry.g) / 2;
+                    break;
             }
             return L;
         }
