@@ -20,4 +20,9 @@ namespace Billet
         public double СrumpleConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на смятие
         public double TensileConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на растяжение
     }
+
+    public class OtherRatios
+    {
+        public double CapSupportRatio { get; set; } = 0.45; // коэффициент учета способа опирания крышки на зубья при расчета толщины крышки
+    }
 }

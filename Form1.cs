@@ -23,9 +23,10 @@ namespace Billet
             Material material = new Material(ratios);
             Steps steps = new Steps();
             ConcentratorRatios concentrator = new ConcentratorRatios();
+            OtherRatios otherRatios = new OtherRatios();
             Additions additions = new Additions();
 
-            Calculations calculations = new Calculations(loads, geometry, material, concentrator, steps, additions);
+            Calculations calculations = new Calculations(loads, geometry, material, concentrator, otherRatios, steps, additions);
 
             double result = calculations.GetContactArea();
         }

@@ -11,5 +11,6 @@ namespace Billet
         public double СrumpleStep { get; set; } = 1;
         public double ToothStep { get; set; } = 1;
         public double DiameterStep { get; set; } = 2;
+        public double CapStep { get; set; } = 1;
     }
 }

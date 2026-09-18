@@ -14,6 +14,7 @@ namespace Billet
         public double D_corp_ex { get; set; } = 0; // внешний диаметр корпуса
         public double D_nom { get; set; } = 1400; // проходное сечение корпуса
         public double D_pr { get; set; } = 1444; // внешний диаметр прокладки
+        public double d { get; set; } = 0; // диаметр отверстия в крышке (для штуцера)
         public double f_1 { get; set; } = 10; // ширина фаски на обнижении зуба крышки
         public double f_2 { get; set; } = 3; // глубина фаски на обнижении зуба крышки
         public double f_3 { get; set; } = 15; // ширина фаски по внутренней плоскости крышки в радиальном направлении
@@ -31,6 +32,7 @@ namespace Billet
         public double r_3 { get; set; } = 10; // радиус резки
         public double r_4 { get; set; } = 7; // радиус скругления на обнижении зуба
         public double r_5 { get; set; } = 8; // радиус канавки под зубом корпуса
+        public double s_1 { get; set; } = 0; // толщина крышки
         public double s_11 { get; set; } = 20; // толщина зуба крышки
         public double s_21 { get; set; } = 10; // толщина зуба корпуса
         public double z { get; set; } = 10; // глубина обнижения зуба крышки
