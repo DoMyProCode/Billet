@@ -31,7 +31,8 @@ namespace Billet
         public double r_2 { get; set; } = 2; // радиус скругления зуба корпуса по плоскости контакта
         public double r_3 { get; set; } = 10; // радиус резки
         public double r_4 { get; set; } = 7; // радиус скругления на обнижении зуба
-        public double r_5 { get; set; } = 8; // радиус канавки под зубом корпуса
+        public double r_5 { get; set; } = 7.5; // радиус канавки под зубом корпуса
+        public double r_6 { get; set; } = 7; // радиус скругления в сечении 5-5
         public double s_1 { get; set; } = 0; // толщина крышки
         public double s_11 { get; set; } = 20; // толщина зуба крышки
         public double s_21 { get; set; } = 10; // толщина зуба корпуса

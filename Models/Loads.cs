@@ -11,5 +11,6 @@ namespace Billet
         public double WorkPressure { get; set; } = 8; // рабочее давление
         public double TestPressure { get; set; } = 12; // испытательное давление
         public double DesignTemperature { get; set; } = 80; // расчетная температура
+        public double NumberOfCycles { get; set; } = 1000; // количество циклов нагружения
     }
 }
