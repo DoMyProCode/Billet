@@ -34,35 +34,95 @@ namespace Billet
             _additions = additions;
 
             SelectСrumple();
-            Console.WriteLine($"внутренний диаметр контакта {2 * R_1} мм");
-            Console.WriteLine($"внешний диаметр крышки {2 * _geometry.R_ex} мм");
-
-            Console.WriteLine($"________СРЕЗ______________");
             SelectShear("cap");
-            Console.WriteLine($"толщина зуба крышки {_geometry.s_11} мм");
-            SelectShear("corpus_22");
-            Console.WriteLine($"толщина зуба корпуса {_geometry.s_21} мм");
-
-            Console.WriteLine($"________ИЗГИБ______________");
             SelectBend("cap");
-            Console.WriteLine($"толщина зуба крышки {_geometry.s_11} мм");
-            SelectBend("corpus_22");
-            Console.WriteLine($"толщина зуба корпуса из расчета в сечении 2-2 {_geometry.s_21} мм");
-            SelectBend("corpus_33");
-            Console.WriteLine($"толщина зуба корпуса из расчета в сечении 3-3 {_geometry.s_21} мм");
-            SelectTensileBend("corpus_34");
-            Console.WriteLine($"внешний диаметр из расчета на растяжение c изгибом в сечении 3-4 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
-            SelectTensileBend("corpus_55");
-            Console.WriteLine($"внешний диаметр из расчета на изгиб в сечении 5-5 {_geometry.D_corp_ex} мм, толщина стенки {_geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k)}");
+            //SelectShear("corpus_22");
+            //SelectBend("corpus_22");
+            //SelectBend("corpus_33");
+            //SelectTensileBend("corpus_34");
+            //SelectTensileBend("corpus_55");
+            //SelectCapThickness();
 
-            Console.WriteLine($"________КРЫШКА______________");
-            SelectCapThickness();
-            Console.WriteLine($"толщина крышки {_geometry.s_1} мм");
+
+            Console.WriteLine(GetCheckReport());
+            Console.WriteLine(_geometry.s_11);
+
+        }
+
+        string GetCheckReport()
+        {
+            var sb = new StringBuilder();
+
+            // sb.AppendLine($"ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ");
+
+            sb.AppendLine("\n- Расчет плоской крышки в рабочих условиях");
+            sb.AppendLine("Толщина плоской крышки работающей под внутренним избыточным давлением");
+
+            var s1p = CheckCapThickness("work", _geometry.s_1);
+            sb.AppendLine($"s1р = {s1p.thickness}");
+            sb.AppendLine($"{_geometry.s_1} >= {s1p.thickness + _additions.c_cap_work} мм");
+            sb.AppendLine($"{GetConclusion(s1p.conclusion)}");
+
+            sb.AppendLine("\n- Расчет на смятие зоны опирания крышки затвора на корпус");
+            var sigma_sm_r = CheckСrumple("work");
+            sb.AppendLine($"Сигма_см.р = {sigma_sm_r.stress} МПа");
+            sb.AppendLine($"{_material.Sigma_sm_t} >= {sigma_sm_r.stress} МПа");
+            sb.AppendLine($"{GetConclusion(sigma_sm_r.conclusion)}");
+
+            sb.AppendLine("\n- Расчет на срез зуба крышки в сечении I-I");
+            var tau_sr_r11 = CheckShear("cap", "work", GetToothWidth("cap"), _geometry.s_11 - _additions.c_capTooth_work);
+            sb.AppendLine($"Тау_ср.р11 = {tau_sr_r11.stress} МПа");
+            sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r11.stress} МПа");
+            sb.AppendLine($"{GetConclusion(tau_sr_r11.conclusion)}");
+
+            sb.AppendLine("\n- Расчет на изгиб зуба крышки в сечении I-I");
+            var sigma_n_r11 = CheckBend("cap", "work", GetToothWidth("cap"), _geometry.s_11 - _additions.c_capTooth_work, _geometry.r_1);
+            sb.AppendLine($"Сигма_n.р11 = {sigma_n_r11.stress} МПа");
+            sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r11.stress} МПа");
+            sb.AppendLine($"[N11] = {sigma_n_r11.cycles}");
+            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r11.cycles}");
+            sb.AppendLine($"{GetConclusion(sigma_n_r11.conclusion)}");
+
+            //sb.AppendLine("\n- Расчет корпуса в рабочих условиях");
+            //sb.AppendLine("\n- Расчет на срез зуба корпуса в сечении II-II");
+            //var tau_sr_r22 = CheckShear("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work);
+            //sb.AppendLine($"Тау_ср.р12 = {tau_sr_r22.stress} МПа");
+            //sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r22.stress} МПа");
+            //sb.AppendLine($"{GetConclusion(tau_sr_r22.conclusion)}");
+
+            //sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении II-II");
+            //var sigma_n_r22 = CheckBend("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work, _geometry.r_5);
+            //sb.AppendLine($"Сигма_n.р22= = {sigma_n_r22.stress} МПа");
+            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r22.stress} МПа");
+            //sb.AppendLine($"{GetConclusion(sigma_n_r22.conclusion)}");
+
+            //sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении III-III");
+            //var sigma_n_r33 = CheckBend("corpus_33", "work", GetToothWidth("corpus_33"), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_work, _geometry.r_5);
+            //sb.AppendLine($"Сигма_n.р33= = {sigma_n_r33.stress} МПа");
+            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r33.stress} МПа");
+            //sb.AppendLine($"{GetConclusion(sigma_n_r33.conclusion)}");
+
+            //sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении III-IV");
+            //var sigma_sum_r34 = CheckTensileBend("corpus_34", "work", GetSectionGeometry("corpus_34", "work").A, GetSectionGeometry("corpus_34").l, GetSectionGeometry("corpus_34", "work").s, GetSectionGeometry("corpus_34", "work").r);
+            //sb.AppendLine($"Сигма_сум.р34= = {sigma_sum_r34.stress} МПа");
+            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_sum_r34.stress} МПа");
+            //sb.AppendLine($"{GetConclusion(sigma_sum_r34.conclusion)}");
+
+            //sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении V-V");
+            //var sigma_sum_r55 = CheckTensileBend("corpus_55", "work", GetSectionGeometry("corpus_55", "work").A, GetSectionGeometry("corpus_55").l, GetSectionGeometry("corpus_55", "work").s, GetSectionGeometry("corpus_55", "work").r);
+            //sb.AppendLine($"Сигма_сум.р55= = {sigma_sum_r55.stress} МПа");
+            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_sum_r55.stress} МПа");
+            //sb.AppendLine($"{GetConclusion(sigma_sum_r55.conclusion)}");
+
+            return sb.ToString();
+
+
+
         }
 
         (bool conclusion, double stress) CheckСrumple(string type) // проверка на смятие
         {
-            double sigma = GetLoad(type) / GetContactArea() * _concentrator.СrumpleConcentratorRatio;
+            double sigma = Round.RoundUpToStep(GetLoad(type) / GetContactArea() * _concentrator.СrumpleConcentratorRatio, 0.1);
 
             switch (type)
             {
@@ -96,7 +156,7 @@ namespace Billet
         (bool conclusion, double stress) CheckShear(string element, string type, double l, double s) // проверка на срез
         {
             var geometry = GetGeomCharacter(element, l, s);
-            double tau = GetLoad(type) / (geometry.A * _geometry.n) * _concentrator.ShearConcentratorRatio;
+            double tau = Round.RoundUpToStep(GetLoad(type) / (geometry.A * _geometry.n) * _concentrator.ShearConcentratorRatio, 0.1);
             switch (type)
             {
                 case "work":
@@ -132,50 +192,40 @@ namespace Billet
             }
         }
 
-        (bool conclusion, double stress) CheckBend(string element, string type, double l, double s, double r) // проверка на изгиб
+        (bool conclusion, double stress, double cycles) CheckBend(string element, string type, double l, double s, double r) // проверка на изгиб
         {
             double n = _geometry.n; // количество зубьев
 
-            //if (element == "corpus_55")
-            //{
-            //    n = 1;
-            //}
-
             var geometry = GetGeomCharacter(element, l, s);
             double console = GetConsole(element);
-            double sigma = GetLoad(type) * console / (geometry.Wx * n) * _concentrator.BendConcentratorRatio;
+            double sigma = Round.RoundUpToStep(GetLoad(type) * console / (geometry.Wx * n) * _concentrator.BendConcentratorRatio, 0.1);
+            var fatique = CheckFatique(sigma, s + _additions.c_capTooth_work, console, r);
 
             switch (type)
             {
                 case "work":
-                    if (sigma <= _material.Sigma_t && CheckFatique(sigma, s, console, r).conclusion)
+                    if (sigma <= _material.Sigma_t && fatique.conclusion)
                     {
-                        //Console.WriteLine($"{_material.Sigma_t} > {sigma} - проходит");
-                        //Console.WriteLine($"Момент сопротивления {geometry.Wx} мм");
-                        return (true, sigma);
+                        return (true, sigma, fatique.NumberOfCycles);
                     }
                     else
                     {
-                        //Console.WriteLine($"{_material.Sigma_t} < {sigma} - НЕ проходит");
-                        return (false, sigma);
+                        return (false, sigma, fatique.NumberOfCycles);
                     }
 
                 case "test":
                     if (sigma <= _material.Sigma_20)
                     {
-                        //Console.WriteLine($"{_material.Sigma_20} > {sigma} - проходит");
-                        //Console.WriteLine($"Момент сопротивления {geometry.Wx} мм");
-                        return (true, sigma);
+                        return (true, sigma, 0);
                     }
                     else
                     {
-                        //Console.WriteLine($"{_material.Sigma_20} < {sigma} - НЕ проходит");
-                        return (false, sigma);
+                        return (false, sigma, 0);
                     }
 
                 default:
                     {
-                        return (false, sigma);
+                        return (false, sigma, 0);
                     }
             }
         }
@@ -186,7 +236,7 @@ namespace Billet
             var geometry = GetGeomCharacter(element, l, s);
             double sigma_Tensile = GetLoad(type) / area * _concentrator.TensileConcentratorRatio;
             double sigma_Bend = GetLoad(type) * console / (geometry.Wx) * _concentrator.TensileConcentratorRatio;
-            double sigma = sigma_Tensile + sigma_Bend;
+            double sigma = Round.RoundUpToStep(sigma_Tensile + sigma_Bend, 0.1);
 
             switch (type)
             {
@@ -215,6 +265,7 @@ namespace Billet
                         return (false, sigma);
                     }
             }
+
         }
 
         (bool conclusion, double thickness) CheckCapThickness(string type, double thickness)
@@ -236,9 +287,13 @@ namespace Billet
                     break;
             }
 
-            double s = _otherRatios.CapSupportRatio * K_o * D_p * Math.Pow(p / sigma, 0.5);
+            double s = Round.RoundUpToStep(_otherRatios.CapSupportRatio * K_o * D_p * Math.Pow(p / sigma, 0.5), 0.1);
+
             if (s <= thickness)
             {
+                //Console.WriteLine(D_p);
+                //Console.WriteLine(_geometry.R_ex * 2);
+                //Console.WriteLine(R_1 * 2);
                 return (true, s);
             }
             else
@@ -250,17 +305,17 @@ namespace Billet
         (bool conclusion, double NumberOfCycles) CheckFatique(double sigma, double s, double h, double r)
         {
             double B = _material.K_B * _material.Rmt;
-            double C_t = (_material.T_Ct - _loads.DesignTemperature) / _material.T_Ct;
-            double alfa_sigma = 1 + (0.17 + 0.32 * (s / h)) * Math.Pow((h / r), 0.45); // теоретический коэффициент концентрации напряжений
-            double sigma_a = alfa_sigma * sigma / 2; // аплитуда напряжений цикла
-            double N = Math.Floor((1 / _material.n_N) * Math.Pow((_material.A * C_t) / (sigma_a - B / _material.n_sigma), 2)); // допустимое число циклов
+            double C_t = Round.RoundDownToStep((_material.T_Ct - _loads.DesignTemperature) / _material.T_Ct, 0.001);
+            double alfa_sigma = Round.RoundUpToStep(1 + (0.17 + 0.32 * (s / h)) * Math.Pow((h / r), 0.45), 0.001); // теоретический коэффициент концентрации напряжений
+            double sigma_a = Round.RoundUpToStep(alfa_sigma * sigma / 2, 0.1); // аплитуда напряжений цикла
+            double N = Math.Floor(1 / _material.n_N * Math.Pow(_material.A * C_t / (sigma_a - B / _material.n_sigma), 2)); // допустимое число циклов
             if (N >= _loads.NumberOfCycles)
             {
                 return (true, N);
             }
             else
-            { 
-                return (false, N); 
+            {
+                return (false, N);
             }
         }
 
@@ -314,81 +369,23 @@ namespace Billet
                         _geometry.s_21 = _geometry.s_21 + _steps.ToothStep;
                     }
                     break;
-                //case "corpus_55":
 
-                //    if (_geometry.D_corp_ex <= (_geometry.R_ex + _geometry.b_k) * 2)
-                //    {
-                //        _geometry.D_corp_ex = (_geometry.R_ex + _geometry.b_k) * 2 + 2;
-                //    }
-
-                //    double s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
-                //    double l = 2 * pi * (_geometry.R_ex + _geometry.b_k);
-
-                //    while (!CheckBend(element, "work", l, s - _additions.c_corpus_work) || !CheckBend(element, "test", l, s - _additions.c_corpus_test))
-                //    {
-                //        _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
-                //        s = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k);
-                //    }
-                //    break;
                 default: break;
             }
         }
 
         void SelectTensileBend(string element)  // подбор внешнего диаметра из условия растяжения
         {
-            double areaWork = 0;
-            double areaTest = 0;
-            double l = 0;
-            double s_work = 0;
-            double s_test = 0;
 
             if (_geometry.D_corp_ex <= (_geometry.R_ex + _geometry.b_k + _geometry.r_5) * 2)
             {
-                _geometry.D_corp_ex = (_geometry.R_ex + _geometry.b_k + _geometry.r_5) * 2 + 2;
+                _geometry.D_corp_ex = Round.RoundUpToStep((_geometry.R_ex + _geometry.b_k + _geometry.r_5) * 2 + 2, 2);
             }
 
-            switch (element)
+            while (!CheckTensileBend(element, "work", GetSectionGeometry(element, "work").A, GetSectionGeometry(element).l, GetSectionGeometry(element, "work").s, GetSectionGeometry(element).r).conclusion
+                || !CheckTensileBend(element, "test", GetSectionGeometry(element, "test").A, GetSectionGeometry(element).l, GetSectionGeometry(element, "test").s, GetSectionGeometry(element).r).conclusion)
             {
-                case "corpus_34":
-
-                    areaWork = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_work, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_work, 2));
-                    areaTest = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_test, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_test, 2));
-                    l = 2 * pi * (_geometry.R_ex + _geometry.b_k + _geometry.r_5);
-                    s_work = (_geometry.D_corp_ex / 2 - _additions.c_corpus_work) - (_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_work);
-                    s_test = (_geometry.D_corp_ex / 2 - _additions.c_corpus_test) - (_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_test);
-
-                    while (!CheckTensileBend(element, "work", areaWork, l, s_work, _geometry.r_5).conclusion || !CheckTensileBend(element, "test", areaTest, l, s_test, _geometry.r_5).conclusion)
-                    {
-                        _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
-
-                        areaWork = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_work, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_work, 2));
-                        areaTest = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_test, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_test, 2));
-                        l = 2 * pi * (_geometry.R_ex + _geometry.b_k + _geometry.r_5);
-                        s_work = (_geometry.D_corp_ex / 2 - _additions.c_corpus_work) - (_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_work);
-                        s_test = (_geometry.D_corp_ex / 2 - _additions.c_corpus_test) - (_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_test);
-                    }
-                    break;
-
-                case "corpus_55":
-
-                    areaWork = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_work, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_work, 2));
-                    areaTest = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_test, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_test, 2));
-                    l = 2 * pi * (_geometry.R_ex + _geometry.b_k);
-                    s_work = (_geometry.D_corp_ex / 2 - _additions.c_corpus_work) - (_geometry.R_ex + _geometry.b_k + _additions.c_corpus_work);
-                    s_test = (_geometry.D_corp_ex / 2 - _additions.c_corpus_test) - (_geometry.R_ex + _geometry.b_k + _additions.c_corpus_test);
-
-                    while (!CheckTensileBend(element, "work", areaWork, l, s_work, _geometry.r_6).conclusion || !CheckTensileBend(element, "test", areaTest, l, s_test, _geometry.r_6).conclusion)
-                    {
-                        _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
-
-                        areaWork = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_work, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_work, 2));
-                        areaTest = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_test, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_test, 2));
-                        l = 2 * pi * (_geometry.R_ex + _geometry.b_k);
-                        s_work = (_geometry.D_corp_ex / 2 - _additions.c_corpus_work) - (_geometry.R_ex + _geometry.b_k + _additions.c_corpus_work);
-                        s_test = (_geometry.D_corp_ex / 2 - _additions.c_corpus_test) - (_geometry.R_ex + _geometry.b_k + _additions.c_corpus_test);
-                    }
-                    break;
-                default: break;
+                _geometry.D_corp_ex = _geometry.D_corp_ex + _steps.DiameterStep;
             }
         }
 
@@ -456,6 +453,56 @@ namespace Billet
                     break;
             }
             return l;
+        }
+
+        public (double A, double l, double s, double r) GetSectionGeometry(string element, string type = "")
+        {
+            double A = 0;
+            double l = 0;
+            double s = 0;
+            double r = 0;
+
+            switch (element)
+            {
+                case "corpus_34":
+                    l = 2 * pi * (_geometry.R_ex + _geometry.b_k + _geometry.r_5);
+                    r = _geometry.r_5;
+
+                    switch (type)
+                    {
+                        case "work":
+                            A = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_work, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_work, 2));
+                            s = (_geometry.D_corp_ex / 2 - _additions.c_corpus_work) - (_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_work);
+                            break;
+                        case "test":
+                            A = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_test, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_test, 2));
+                            s = (_geometry.D_corp_ex / 2 - _additions.c_corpus_test) - (_geometry.R_ex + _geometry.b_k + _geometry.r_5 + _additions.c_corpus_test);
+                            break;
+                        default: break;
+                    }
+                    break;
+
+                case "corpus_55":
+                    l = 2 * pi * (_geometry.R_ex + _geometry.b_k);
+                    r = _geometry.r_6;
+
+                    switch (type)
+                    {
+                        case "work":
+                            A = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_work, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_work, 2));
+                            s = (_geometry.D_corp_ex / 2 - _additions.c_corpus_work) - (_geometry.R_ex + _geometry.b_k + _additions.c_corpus_work);
+
+                            break;
+                        case "test":
+                            A = pi * (Math.Pow(_geometry.D_corp_ex / 2 - _additions.c_corpus_test, 2) - Math.Pow(_geometry.R_ex + _geometry.b_k + _additions.c_corpus_test, 2));
+                            s = (_geometry.D_corp_ex / 2 - _additions.c_corpus_test) - (_geometry.R_ex + _geometry.b_k + _additions.c_corpus_test);
+                            break;
+                        default: break;
+                    }
+                    break;
+                default: break;
+            }
+            return (A, l, s, r);
         }
 
         public double GetConsole(string element)

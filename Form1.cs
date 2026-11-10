@@ -28,7 +28,6 @@ namespace Billet
 
             Calculations calculations = new Calculations(loads, geometry, material, concentrator, otherRatios, steps, additions);
 
-            double result = calculations.GetContactArea();
         }
     }
 }
