@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,16 +37,16 @@ namespace Billet
             SelectСrumple();
             SelectShear("cap");
             SelectBend("cap");
-            //SelectShear("corpus_22");
-            //SelectBend("corpus_22");
-            //SelectBend("corpus_33");
-            //SelectTensileBend("corpus_34");
-            //SelectTensileBend("corpus_55");
-            //SelectCapThickness();
+            SelectShear("corpus_22");
+            SelectBend("corpus_22");
+            SelectBend("corpus_33");
+            SelectTensileBend("corpus_34");
+            SelectTensileBend("corpus_55");
+            SelectCapThickness();
 
 
             Console.WriteLine(GetCheckReport());
-            Console.WriteLine(_geometry.s_11);
+            //Console.WriteLine(_geometry.s_21 + _geometry.r_5);
 
         }
 
@@ -83,36 +84,48 @@ namespace Billet
             sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r11.cycles}");
             sb.AppendLine($"{GetConclusion(sigma_n_r11.conclusion)}");
 
-            //sb.AppendLine("\n- Расчет корпуса в рабочих условиях");
-            //sb.AppendLine("\n- Расчет на срез зуба корпуса в сечении II-II");
-            //var tau_sr_r22 = CheckShear("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work);
-            //sb.AppendLine($"Тау_ср.р12 = {tau_sr_r22.stress} МПа");
-            //sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r22.stress} МПа");
-            //sb.AppendLine($"{GetConclusion(tau_sr_r22.conclusion)}");
+            sb.AppendLine("\n- Расчет корпуса в рабочих условиях");
+            sb.AppendLine("\n- Расчет на срез зуба корпуса в сечении II-II");
+            var tau_sr_r22 = CheckShear("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work);
+            sb.AppendLine($"Тау_ср.р12 = {tau_sr_r22.stress} МПа");
+            sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r22.stress} МПа");
+            sb.AppendLine($"{GetConclusion(tau_sr_r22.conclusion)}");
 
-            //sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении II-II");
-            //var sigma_n_r22 = CheckBend("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work, _geometry.r_5);
-            //sb.AppendLine($"Сигма_n.р22= = {sigma_n_r22.stress} МПа");
-            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r22.stress} МПа");
-            //sb.AppendLine($"{GetConclusion(sigma_n_r22.conclusion)}");
+            sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении II-II");
+            var sigma_n_r22 = CheckBend("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work, _geometry.r_5);
+            sb.AppendLine($"Сигма_n.р22= = {sigma_n_r22.stress} МПа");
+            sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r22.stress} МПа");
+            sb.AppendLine($"[N22] = {sigma_n_r22.cycles}");
+            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r22.cycles}");
+            sb.AppendLine($"{GetConclusion(sigma_n_r22.conclusion)}");
 
-            //sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении III-III");
-            //var sigma_n_r33 = CheckBend("corpus_33", "work", GetToothWidth("corpus_33"), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_work, _geometry.r_5);
-            //sb.AppendLine($"Сигма_n.р33= = {sigma_n_r33.stress} МПа");
-            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r33.stress} МПа");
-            //sb.AppendLine($"{GetConclusion(sigma_n_r33.conclusion)}");
+            sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении III-III");
+            var sigma_n_r33 = CheckBend("corpus_33", "work", GetToothWidth("corpus_33"), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_work, _geometry.r_5);
+            sb.AppendLine($"Сигма_n.р33= = {sigma_n_r33.stress} МПа");
+            sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r33.stress} МПа");
+            sb.AppendLine($"[N33] = {sigma_n_r33.cycles}");
+            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r33.cycles}");
+            sb.AppendLine($"{GetConclusion(sigma_n_r33.conclusion)}");
 
-            //sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении III-IV");
-            //var sigma_sum_r34 = CheckTensileBend("corpus_34", "work", GetSectionGeometry("corpus_34", "work").A, GetSectionGeometry("corpus_34").l, GetSectionGeometry("corpus_34", "work").s, GetSectionGeometry("corpus_34", "work").r);
-            //sb.AppendLine($"Сигма_сум.р34= = {sigma_sum_r34.stress} МПа");
-            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_sum_r34.stress} МПа");
-            //sb.AppendLine($"{GetConclusion(sigma_sum_r34.conclusion)}");
+            sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении III-IV");
+            var sigma_sum_r34 = CheckTensileBend("corpus_34", "work", GetSectionGeometry("corpus_34", "work").A, GetSectionGeometry("corpus_34").l, GetSectionGeometry("corpus_34", "work").s, GetSectionGeometry("corpus_34", "work").r);
+            sb.AppendLine($"Сигма_сум.р34= = {sigma_sum_r34.stress} МПа");
+            sb.AppendLine($"{_material.Sigma_t} >= {sigma_sum_r34.stress} МПа");
+            sb.AppendLine($"Коэфф. концентрации = {sigma_sum_r34.stressConcentrat}");
+            sb.AppendLine($"Амплитуда = {sigma_sum_r34.amplitude} МПа");
+            sb.AppendLine($"[N34] = {sigma_sum_r34.cycles}");
+            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_sum_r34.cycles}");
+            sb.AppendLine($"{GetConclusion(sigma_sum_r34.conclusion)}");
 
-            //sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении V-V");
-            //var sigma_sum_r55 = CheckTensileBend("corpus_55", "work", GetSectionGeometry("corpus_55", "work").A, GetSectionGeometry("corpus_55").l, GetSectionGeometry("corpus_55", "work").s, GetSectionGeometry("corpus_55", "work").r);
-            //sb.AppendLine($"Сигма_сум.р55= = {sigma_sum_r55.stress} МПа");
-            //sb.AppendLine($"{_material.Sigma_t} >= {sigma_sum_r55.stress} МПа");
-            //sb.AppendLine($"{GetConclusion(sigma_sum_r55.conclusion)}");
+            sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении V-V");
+            var sigma_sum_r55 = CheckTensileBend("corpus_55", "work", GetSectionGeometry("corpus_55", "work").A, GetSectionGeometry("corpus_55").l, GetSectionGeometry("corpus_55", "work").s, GetSectionGeometry("corpus_55", "work").r);
+            sb.AppendLine($"Сигма_сум.р55= = {sigma_sum_r55.stress} МПа");
+            sb.AppendLine($"{_material.Sigma_t} >= {sigma_sum_r55.stress} МПа");
+            sb.AppendLine($"Коэфф. концентрации = {sigma_sum_r55.stressConcentrat}");
+            sb.AppendLine($"Амплитуда = {sigma_sum_r55.amplitude} МПа");
+            sb.AppendLine($"[N55] = {sigma_sum_r55.cycles}");
+            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_sum_r55.cycles}");
+            sb.AppendLine($"{GetConclusion(sigma_sum_r55.conclusion)}");
 
             return sb.ToString();
 
@@ -199,7 +212,7 @@ namespace Billet
             var geometry = GetGeomCharacter(element, l, s);
             double console = GetConsole(element);
             double sigma = Round.RoundUpToStep(GetLoad(type) * console / (geometry.Wx * n) * _concentrator.BendConcentratorRatio, 0.1);
-            var fatique = CheckFatique(sigma, s + _additions.c_capTooth_work, console, r);
+            var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
 
             switch (type)
             {
@@ -230,7 +243,7 @@ namespace Billet
             }
         }
 
-        (bool conclusion, double stress) CheckTensileBend(string element, string type, double area, double l, double s, double r) // проверка на растяжение с изгибом
+        (bool conclusion, double stress, double cycles, double amplitude, double stressConcentrat) CheckTensileBend(string element, string type, double area, double l, double s, double r) // проверка на растяжение с изгибом
         {
             double console = GetConsole(element);
             var geometry = GetGeomCharacter(element, l, s);
@@ -238,31 +251,38 @@ namespace Billet
             double sigma_Bend = GetLoad(type) * console / (geometry.Wx) * _concentrator.TensileConcentratorRatio;
             double sigma = Round.RoundUpToStep(sigma_Tensile + sigma_Bend, 0.1);
 
+            //Console.WriteLine(element);
+            //Console.WriteLine(console);
+            //Console.WriteLine(s);
+
+            var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
+
+
             switch (type)
             {
                 case "work":
-                    if (sigma <= _material.Sigma_ras_t && CheckFatique(sigma, s, console, r).conclusion)
+                    if (sigma <= _material.Sigma_ras_t && fatique.conclusion)
                     {
-                        return (true, sigma);
+                        return (true, sigma, fatique.NumberOfCycles, fatique.sigma_a, fatique.alfa_sigma);
                     }
                     else
                     {
-                        return (false, sigma);
+                        return (false, sigma, fatique.NumberOfCycles, fatique.sigma_a, fatique.alfa_sigma);
                     }
 
                 case "test":
                     if (sigma <= _material.Sigma_ras_20)
                     {
-                        return (true, sigma);
+                        return (true, sigma, 0, 0, 0);
                     }
                     else
                     {
-                        return (false, sigma);
+                        return (false, sigma, 0, 0, 0);
                     }
 
                 default:
                     {
-                        return (false, sigma);
+                        return (false, sigma, 0, 0, 0);
                     }
             }
 
@@ -302,7 +322,7 @@ namespace Billet
             }
         }
 
-        (bool conclusion, double NumberOfCycles) CheckFatique(double sigma, double s, double h, double r)
+        (bool conclusion, double NumberOfCycles, double sigma_a, double alfa_sigma) CheckFatique(double sigma, double s, double h, double r)
         {
             double B = _material.K_B * _material.Rmt;
             double C_t = Round.RoundDownToStep((_material.T_Ct - _loads.DesignTemperature) / _material.T_Ct, 0.001);
@@ -311,11 +331,16 @@ namespace Billet
             double N = Math.Floor(1 / _material.n_N * Math.Pow(_material.A * C_t / (sigma_a - B / _material.n_sigma), 2)); // допустимое число циклов
             if (N >= _loads.NumberOfCycles)
             {
-                return (true, N);
+                //Console.WriteLine(alfa_sigma);
+                //Console.WriteLine(sigma_a);
+                //Console.WriteLine(s);
+                //Console.WriteLine(h);
+
+                return (true, N, sigma_a, alfa_sigma);
             }
             else
             {
-                return (false, N);
+                return (false, N, sigma_a, alfa_sigma);
             }
         }
 
@@ -694,6 +719,63 @@ namespace Billet
             else
             {
                 return "Условие НЕ выполнено!!!";
+            }
+        }
+        double GetAddition(string element, string type)
+        {
+            string group = element;
+
+            if (group == "corpus_22" || group == "corpus_33")
+            {
+                group = "corpusTooth";
+            }
+            if (group == "corpus_34" || group == "corpus_55")
+            {
+                group = "corpus";
+            }
+
+            switch (group)
+            {
+                case "cap":
+                    switch (type)
+                    {
+                        case "work":
+                            return _additions.c_cap_work;
+                        case "test":
+                            return _additions.c_cap_test;
+                        default: throw new ArgumentException($"Неизвестный режим: {type}", nameof(type));
+                    }
+
+                case "capTooth":
+                    switch (type)
+                    {
+                        case "work":
+                            return _additions.c_capTooth_work;
+                        case "test":
+                            return _additions.c_capTooth_test;
+                        default: throw new ArgumentException($"Неизвестный режим: {type}", nameof(type));
+                    }
+
+                case "corpusTooth":
+                    switch (type)
+                    {
+                        case "work":
+                            return _additions.c_corpus_work;
+                        case "test":
+                            return _additions.c_corpus_test;
+                        default: throw new ArgumentException($"Неизвестный режим: {type}", nameof(type));
+                    }
+                case "corpus":
+                    switch (type)
+                    {
+                        case "work":
+                            return _additions.c_corpus_work * 2;
+                        case "test":
+                            return _additions.c_corpus_test * 2;
+                        default: throw new ArgumentException($"Неизвестный режим: {type}", nameof(type));
+                    }
+
+                default: throw new ArgumentException($"Неизвестный элемент: {element}", nameof(element));
             }
         }
     }
