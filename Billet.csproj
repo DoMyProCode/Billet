@@ -47,6 +47,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\Calculations.cs" />
+    <Compile Include="Core\Print.cs" />
+    <Compile Include="Core\Report.cs" />
+    <Compile Include="Core\Results.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -54,6 +57,7 @@
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Additions.cs" />
+    <Compile Include="Models\ElementResult.cs" />
     <Compile Include="Models\Geometry.cs" />
     <Compile Include="Models\Loads.cs" />
     <Compile Include="Models\Material.cs" />

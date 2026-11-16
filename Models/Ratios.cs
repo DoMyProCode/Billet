@@ -15,6 +15,7 @@ namespace Billet
 
     public class ConcentratorRatios
     {
+        public double CapConcentratorRatio { get; set; } = 1.0; // коэффициент учета концентраторов напряжений при расчете плоской крышки
         public double BendConcentratorRatio { get; set; } = 1.0; // коэффициент учета концентраторов напряжений при работе на изгиб
         public double ShearConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на срез
         public double СrumpleConcentratorRatio { get; set; } = 1; // коэффициент учета концентраторов напряжений при работе на смятие

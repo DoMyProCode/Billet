@@ -45,8 +45,8 @@ namespace Billet
             SelectCapThickness();
 
 
-            Console.WriteLine(GetCheckReport());
-            //Console.WriteLine(_geometry.s_21 + _geometry.r_5);
+            //Console.WriteLine(GetCheckReport());
+            ////Console.WriteLine(_geometry.s_21 + _geometry.r_5);
 
         }
 
@@ -54,7 +54,7 @@ namespace Billet
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine($"ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ");
+            sb.AppendLine($"ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ\n");
             sb.AppendLine($"Величина зазора между выступом корпуса и цилиндрической частью крышки - {_geometry.b_pr}");
             sb.AppendLine($"Наружный диаметр затвора - {_geometry.D_corp_ex}");
             sb.AppendLine($"Проходное сечение затвора - {_geometry.D_nom}");
@@ -74,10 +74,10 @@ namespace Billet
             sb.AppendLine("\n- РАСЧЕТ РАБОЧИХ УСЛОВИЯХ");
 
             sb.AppendLine("\nТолщина плоской крышки работающей под внутренним избыточным давлением");
-            var s1p = CheckCapThickness("work", _geometry.s_1);
-            sb.AppendLine($"s1р = {s1p.thickness}");
-            sb.AppendLine($"{_geometry.s_1} >= {s1p.thickness + _additions.c_cap_work} мм");
-            sb.AppendLine($"{GetConclusion(s1p.conclusion)}");
+            var s1r = CheckCapThickness("work", _geometry.s_1);
+            sb.AppendLine($"s1р = {s1r.thickness}");
+            sb.AppendLine($"{_geometry.s_1} >= {s1r.thickness} мм");
+            sb.AppendLine($"{GetConclusion(s1r.conclusion)}");
 
             sb.AppendLine("\n- Расчет на смятие зоны опирания крышки затвора на корпус");
             var sigma_sm_r = CheckСrumple("work");
@@ -101,7 +101,7 @@ namespace Billet
 
             sb.AppendLine("\n- Расчет на срез зуба корпуса в сечении II-II");
             var tau_sr_r22 = CheckShear("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work);
-            sb.AppendLine($"Тау_ср.р12 = {tau_sr_r22.stress} МПа");
+            sb.AppendLine($"Тау_ср.р22 = {tau_sr_r22.stress} МПа");
             sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r22.stress} МПа");
             sb.AppendLine($"{GetConclusion(tau_sr_r22.conclusion)}");
 
@@ -141,18 +141,156 @@ namespace Billet
             sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_sum_r55.cycles}");
             sb.AppendLine($"{GetConclusion(sigma_sum_r55.conclusion)}");
 
+            sb.AppendLine("\n- РАСЧЕТ УСЛОВИЯХ ИСПЫТАНИЙ");
+
+
+
             return sb.ToString();
 
         }
 
+        public Results GetCheckResults()
+        {
+            Results results = new Results();
+
+            AddPairCheck(
+                results,
+                description: "Толщина плоской крышки работающей под внутренним избыточным давлением",
+                baseName: "s1",
+                unit: "мм",
+                calcFunc: type => CheckCapThickness(type, _geometry.s_1).thickness,
+                workLimit: _geometry.s_1,
+                testLimit: _geometry.s_1
+            );
+
+            AddPairCheck(
+                results,
+                description: "Расчет на смятие зоны опирания крышки затвора на корпус",
+                baseName: "sigma см.",
+                unit: "МПа",
+                calcFunc: type => CheckСrumple(type).stress,
+                workLimit: _material.Sigma_sm_t,
+                testLimit: _material.Sigma_sm_20
+            );
+
+            string element = "cap_11";
+            AddPairCheck(
+                results,
+                description: "Расчет на срез зуба крышки в сечении I-I",
+                baseName: "tau ср.1-1.",
+                unit: "МПа",
+                calcFunc: type => CheckShear(element, type, GetToothWidth(element), _geometry.s_11 - GetAddition(element, type)).stress,
+                workLimit: _material.Tau_sr_t,
+                testLimit: _material.Tau_sr_20
+            );
+
+            AddPairCheck(
+                results,
+                description: "Расчет на изгиб зуба крышки в сечении I-I",
+                baseName: "sigma н.1-1.",
+                unit: "МПа",
+                calcFunc: type => CheckBend(element, type, GetToothWidth(element), _geometry.s_11 - GetAddition(element, type), _geometry.r_1).stress,
+                workLimit: _material.Sigma_t,
+                testLimit: _material.Sigma_20
+            );
+
+            element = "corpus_22";
+
+            AddPairCheck(
+                results,
+                description: "Расчет на срез зуба корпуса в сечении II-II",
+                baseName: "tau ср.2-2.",
+                unit: "МПа",
+                calcFunc: type => CheckShear(element, type, GetToothWidth(element), _geometry.s_21 - GetAddition(element, type)).stress,
+                workLimit: _material.Tau_sr_t,
+                testLimit: _material.Tau_sr_20
+            );
+
+            AddPairCheck(
+                results,
+                description: "Расчет на изгиб зуба корпуса в сечении II-II",
+                baseName: "sigma н.2-2.",
+                unit: "МПа",
+                calcFunc: type => CheckBend(element, type, GetToothWidth(element), _geometry.s_21 - GetAddition(element, type), _geometry.r_5).stress,
+                workLimit: _material.Sigma_t,
+                testLimit: _material.Sigma_20
+            );
+
+            element = "corpus_33";
+
+            AddPairCheck(
+               results,
+               description: "Расчет на изгиб зуба корпуса в сечении III-III",
+               baseName: "sigma н.3-3.",
+               unit: "МПа",
+               calcFunc: type => CheckBend(element, type, GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - GetAddition(element, type), _geometry.r_5).stress,
+               workLimit: _material.Sigma_t,
+               testLimit: _material.Sigma_20
+            );
+
+            element = "corpus_34";
+
+            AddPairCheck(
+               results,
+               description: "Расчет на изгиб и растяжение корпуса в сечении III-IV",
+               baseName: "sigma сум.3-4.",
+               unit: "МПа",
+               calcFunc: type => CheckTensileBend(element, type, GetSectionGeometry(element, type).A, GetSectionGeometry(element).l, GetSectionGeometry(element, type).s, GetSectionGeometry(element, type).r).stress,
+               workLimit: _material.Sigma_ras_t,
+               testLimit: _material.Sigma_ras_20
+            );
+
+            element = "corpus_55";
+
+            AddPairCheck(
+               results,
+               description: "Расчет на изгиб и растяжение корпуса в сечении V-V",
+               baseName: "sigma сум.5-5.",
+               unit: "МПа",
+               calcFunc: type => CheckTensileBend(element, type, GetSectionGeometry(element, type).A, GetSectionGeometry(element).l, GetSectionGeometry(element, type).s, GetSectionGeometry(element, type).r).stress,
+               workLimit: _material.Sigma_ras_t,
+               testLimit: _material.Sigma_ras_20
+            );
+
+            return results;
+        }
+
+        private void AddPairCheck(
+            Results results,
+            string description,
+            string baseName,
+            string unit,
+            Func<string, double> calcFunc,
+            double workLimit,
+            double testLimit)
+        {
+            var modes = new[]
+            { (Type: "work", Suffix: "р", Limit: workLimit),
+              (Type: "test", Suffix: "и", Limit: testLimit)};
+
+            foreach (var mode in modes)
+            {
+                results.AddResult(new ElementResult
+                {
+                    Description = description,
+                    TypeLoad = mode.Type,
+                    Name = baseName + mode.Suffix,
+                    Value = calcFunc(mode.Type),
+                    Limit = mode.Limit,
+                    Unit = unit
+                });
+            }
+        }
+
+
         (bool conclusion, double stress) CheckСrumple(string type) // проверка на смятие
         {
-            double sigma = Round.RoundUpToStep(GetLoad(type) / GetContactArea() * _concentrator.СrumpleConcentratorRatio, 0.1);
+            double sigma = Round.RoundUpToStep(GetLoad(type) / GetContactArea(), 0.1);
 
             switch (type)
             {
                 case "work":
-                    if (sigma <= _material.Sigma_sm_t)
+                    if (sigma * _concentrator.СrumpleConcentratorRatio <= _material.Sigma_sm_t)
                     {
                         return (true, sigma);
                     }
@@ -162,7 +300,7 @@ namespace Billet
                     }
 
                 case "test":
-                    if (sigma <= _material.Sigma_sm_20)
+                    if (sigma * _concentrator.СrumpleConcentratorRatio <= _material.Sigma_sm_20)
                     {
                         return (true, sigma);
                     }
@@ -181,11 +319,11 @@ namespace Billet
         (bool conclusion, double stress) CheckShear(string element, string type, double l, double s) // проверка на срез
         {
             var geometry = GetGeomCharacter(element, l, s);
-            double tau = Round.RoundUpToStep(GetLoad(type) / (geometry.A * _geometry.n) * _concentrator.ShearConcentratorRatio, 0.1);
+            double tau = Round.RoundUpToStep(GetLoad(type) / (geometry.A * _geometry.n), 0.1);
             switch (type)
             {
                 case "work":
-                    if (tau <= _material.Tau_sr_t)
+                    if (tau * _concentrator.ShearConcentratorRatio <= _material.Tau_sr_t)
                     {
                         return (true, tau);
                     }
@@ -195,7 +333,7 @@ namespace Billet
                     }
 
                 case "test":
-                    if (tau <= _material.Tau_sr_20)
+                    if (tau * _concentrator.ShearConcentratorRatio <= _material.Tau_sr_20)
                     {
                         return (true, tau);
                     }
@@ -219,7 +357,7 @@ namespace Billet
 
             var geometry = GetGeomCharacter(element, l, s);
             double console = GetConsole(element);
-            double sigma = Round.RoundUpToStep(GetLoad(type) * console / (geometry.Wx * n) * _concentrator.BendConcentratorRatio, 0.1);
+            double sigma = Round.RoundUpToStep(GetLoad(type) * console / (geometry.Wx * n), 0.1);
             var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
 
             //Console.WriteLine(GetAddition(element, type));
@@ -227,7 +365,7 @@ namespace Billet
             switch (type)
             {
                 case "work":
-                    if (sigma <= _material.Sigma_t && fatique.conclusion)
+                    if (sigma * _concentrator.BendConcentratorRatio <= _material.Sigma_t && fatique.conclusion)
                     {
                         return (true, sigma, fatique.NumberOfCycles);
                     }
@@ -237,7 +375,7 @@ namespace Billet
                     }
 
                 case "test":
-                    if (sigma <= _material.Sigma_20)
+                    if (sigma * _concentrator.BendConcentratorRatio <= _material.Sigma_20)
                     {
                         return (true, sigma, 0);
                     }
@@ -257,8 +395,8 @@ namespace Billet
         {
             double console = GetConsole(element);
             var geometry = GetGeomCharacter(element, l, s);
-            double sigma_Tensile = GetLoad(type) / area * _concentrator.TensileConcentratorRatio;
-            double sigma_Bend = GetLoad(type) * console / (geometry.Wx) * _concentrator.TensileConcentratorRatio;
+            double sigma_Tensile = GetLoad(type) / area;
+            double sigma_Bend = GetLoad(type) * console / (geometry.Wx);
             double sigma = Round.RoundUpToStep(sigma_Tensile + sigma_Bend, 0.1);
 
             //Console.WriteLine(area);
@@ -274,7 +412,7 @@ namespace Billet
             switch (type)
             {
                 case "work":
-                    if (sigma <= _material.Sigma_ras_t && fatique.conclusion)
+                    if (sigma * _concentrator.TensileConcentratorRatio <= _material.Sigma_ras_t && fatique.conclusion)
                     {
                         return (true, sigma, fatique.NumberOfCycles, fatique.sigma_a, fatique.alfa_sigma);
                     }
@@ -284,7 +422,7 @@ namespace Billet
                     }
 
                 case "test":
-                    if (sigma <= _material.Sigma_ras_20)
+                    if (sigma * _concentrator.TensileConcentratorRatio <= _material.Sigma_ras_20)
                     {
                         return (true, sigma, 0, 0, 0);
                     }
@@ -322,16 +460,16 @@ namespace Billet
 
             double s = Round.RoundUpToStep(_otherRatios.CapSupportRatio * K_o * D_p * Math.Pow(p / sigma, 0.5), 0.1);
 
-            if (s <= thickness)
+            if (s * _concentrator.CapConcentratorRatio <= thickness)
             {
                 //Console.WriteLine(D_p);
                 //Console.WriteLine(_geometry.R_ex * 2);
                 //Console.WriteLine(R_1 * 2);
-                return (true, s);
+                return (true, s + GetAddition("cap", type));
             }
             else
             {
-                return (false, s);
+                return (false, s + GetAddition("cap", type));
             }
         }
 
