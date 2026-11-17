@@ -1,26 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Billet
 {
     public class Report
     {
-        List<ElementResult> _elementsResult;
+        private readonly List<ElementResult> _elementsResult;
+
         public Report(Results results)
         {
             _elementsResult = results.Elements;
         }
+
         public string GetReportText()
         {
             var sb = new StringBuilder();
             foreach (var element in _elementsResult)
             {
                 string condition = "";
-                string conclusion = "";
-
                 switch (element.TypeLoad)
                 {
                     case "work":
@@ -29,22 +26,34 @@ namespace Billet
                     case "test":
                         condition = " в условиях испытаний";
                         break;
-                    default: break;
                 }
 
-                if (element.Conclusion)
+                string conclusion = element.Conclusion
+                    ? "Условие выполнено"
+                    : "Условие НЕ выполнено!!!";
+
+                // Формируем неравенство по инженерным правилам
+                string inequality;
+                if (element.Unit == "мм")
                 {
-                    conclusion = "Условие выполнено";
+                    // 1. Толщина заданная >= толщина требуемая
+                    inequality = $"{element.Limit} >= {element.Value} {element.Unit}";
+                }
+                else if (element.IsReversed)
+                {
+                    // 3. Эксплуатационное кол-во циклов <= допускаемого (вычисленного)
+                    inequality = $"{element.Limit} <= {element.Value} {element.Unit}";
                 }
                 else
                 {
-                    conclusion = "Условие НЕ выполнено!!!";
+                    // 2. Напряжения вычисленные <= напряжения допустимые
+                    inequality = $"{element.Value} <= {element.Limit} {element.Unit}";
                 }
 
                 sb.AppendLine($"\n{element.Description}{condition}");
                 sb.AppendLine($"{element.Name} = {element.Value}");
-                sb.AppendLine($"{element.Limit} >= {element.Value} {element.Unit}");
-                sb.AppendLine($"{conclusion}");
+                sb.AppendLine(inequality);
+                sb.AppendLine(conclusion);
                 sb.AppendLine($"Коэффициент запаса - {element.SafetyFactor}");
             }
             return sb.ToString();

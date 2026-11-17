@@ -44,115 +44,13 @@ namespace Billet
             SelectTensileBend("corpus_55");
             SelectCapThickness();
 
-
-            //Console.WriteLine(GetCheckReport());
-            ////Console.WriteLine(_geometry.s_21 + _geometry.r_5);
-
-        }
-
-        string GetCheckReport()
-        {
-            var sb = new StringBuilder();
-
-            sb.AppendLine($"ГЕОМЕТРИЧЕСКИЕ ПАРАМЕТРЫ\n");
-            sb.AppendLine($"Величина зазора между выступом корпуса и цилиндрической частью крышки - {_geometry.b_pr}");
-            sb.AppendLine($"Наружный диаметр затвора - {_geometry.D_corp_ex}");
-            sb.AppendLine($"Проходное сечение затвора - {_geometry.D_nom}");
-            sb.AppendLine($"Толщина кромки под приварку - {_geometry.g}");
-            sb.AppendLine($"Внутренний диаметр зубьев корпуса - {R_1 * 2}"); // только для проверки в exel, фактически в модели нужно вычесть радиус скругления
-            sb.AppendLine($"Наружный диаметр зубьев крышки - {_geometry.R_ex * 2}");
-            sb.AppendLine($"Внешний диаметр прокладки в рабочем положении - {_geometry.D_pr}");
-            sb.AppendLine($"Суммарная площадь смятых зон крышки - {GetContactArea()}");
-            sb.AppendLine($"Глубина канавки либо внутреннего уклона зуба (большее) - {_geometry.h}");
-            sb.AppendLine($"Количество выступов (зубьев) - {_geometry.n}");
-            sb.AppendLine($"Минимальная ширина зуба крышки - {GetToothWidth("cap_11")}");
-            sb.AppendLine($"Максимальная ширина зуба корпуса - {GetToothWidth("corpus_33")}");
-            sb.AppendLine($"Минимальная исполнительная толщина стенки крышки - {_geometry.s_1}");
-            sb.AppendLine($"Исполнительная толщина зуба крышки - {_geometry.s_11}");
-            sb.AppendLine($"Исполнительная толщина зуба корпуса - {_geometry.s_21}");
-
-            sb.AppendLine("\n- РАСЧЕТ РАБОЧИХ УСЛОВИЯХ");
-
-            sb.AppendLine("\nТолщина плоской крышки работающей под внутренним избыточным давлением");
-            var s1r = CheckCapThickness("work", _geometry.s_1);
-            sb.AppendLine($"s1р = {s1r.thickness}");
-            sb.AppendLine($"{_geometry.s_1} >= {s1r.thickness} мм");
-            sb.AppendLine($"{GetConclusion(s1r.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на смятие зоны опирания крышки затвора на корпус");
-            var sigma_sm_r = CheckСrumple("work");
-            sb.AppendLine($"Сигма_см.р = {sigma_sm_r.stress} МПа");
-            sb.AppendLine($"{_material.Sigma_sm_t} >= {sigma_sm_r.stress} МПа");
-            sb.AppendLine($"{GetConclusion(sigma_sm_r.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на срез зуба крышки в сечении I-I");
-            var tau_sr_r11 = CheckShear("cap_11", "work", GetToothWidth("cap_11"), _geometry.s_11 - _additions.c_capTooth_work);
-            sb.AppendLine($"Тау_ср.р11 = {tau_sr_r11.stress} МПа");
-            sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r11.stress} МПа");
-            sb.AppendLine($"{GetConclusion(tau_sr_r11.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на изгиб зуба крышки в сечении I-I");
-            var sigma_n_r11 = CheckBend("cap_11", "work", GetToothWidth("cap_11"), _geometry.s_11 - _additions.c_capTooth_work, _geometry.r_1);
-            sb.AppendLine($"Сигма_n.р11 = {sigma_n_r11.stress} МПа");
-            sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r11.stress} МПа");
-            sb.AppendLine($"[N11] = {sigma_n_r11.cycles}");
-            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r11.cycles}");
-            sb.AppendLine($"{GetConclusion(sigma_n_r11.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на срез зуба корпуса в сечении II-II");
-            var tau_sr_r22 = CheckShear("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work);
-            sb.AppendLine($"Тау_ср.р22 = {tau_sr_r22.stress} МПа");
-            sb.AppendLine($"{_material.Tau_sr_t} >= {tau_sr_r22.stress} МПа");
-            sb.AppendLine($"{GetConclusion(tau_sr_r22.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении II-II");
-            var sigma_n_r22 = CheckBend("corpus_22", "work", GetToothWidth("corpus_22"), _geometry.s_21 - _additions.c_corpus_work, _geometry.r_5);
-            sb.AppendLine($"Сигма_n.р22= = {sigma_n_r22.stress} МПа");
-            sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r22.stress} МПа");
-            sb.AppendLine($"[N22] = {sigma_n_r22.cycles}");
-            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r22.cycles}");
-            sb.AppendLine($"{GetConclusion(sigma_n_r22.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на изгиб зуба корпуса в сечении III-III");
-            var sigma_n_r33 = CheckBend("corpus_33", "work", GetToothWidth("corpus_33"), (_geometry.s_21 + _geometry.r_5) - _additions.c_corpus_work, _geometry.r_5);
-            sb.AppendLine($"Сигма_n.р33= = {sigma_n_r33.stress} МПа");
-            sb.AppendLine($"{_material.Sigma_t} >= {sigma_n_r33.stress} МПа");
-            sb.AppendLine($"[N33] = {sigma_n_r33.cycles}");
-            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_n_r33.cycles}");
-            sb.AppendLine($"{GetConclusion(sigma_n_r33.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении III-IV");
-            var sigma_sum_r34 = CheckTensileBend("corpus_34", "work", GetSectionGeometry("corpus_34", "work").A, GetSectionGeometry("corpus_34").l, GetSectionGeometry("corpus_34", "work").s, GetSectionGeometry("corpus_34", "work").r);
-            sb.AppendLine($"Сигма_сум.р34= = {sigma_sum_r34.stress} МПа");
-            sb.AppendLine($"{_material.Sigma_ras_t} >= {sigma_sum_r34.stress} МПа");
-            sb.AppendLine($"Коэфф. концентрации = {sigma_sum_r34.stressConcentrat}");
-            sb.AppendLine($"Амплитуда = {sigma_sum_r34.amplitude} МПа");
-            sb.AppendLine($"[N34] = {sigma_sum_r34.cycles}");
-            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_sum_r34.cycles}");
-            sb.AppendLine($"{GetConclusion(sigma_sum_r34.conclusion)}");
-
-            sb.AppendLine("\n- Расчет на изгиб и растяжение корпуса в сечении V-V");
-            var sigma_sum_r55 = CheckTensileBend("corpus_55", "work", GetSectionGeometry("corpus_55", "work").A, GetSectionGeometry("corpus_55").l, GetSectionGeometry("corpus_55", "work").s, GetSectionGeometry("corpus_55", "work").r);
-            sb.AppendLine($"Сигма_сум.р55= = {sigma_sum_r55.stress} МПа");
-            sb.AppendLine($"{_material.Sigma_ras_t} >= {sigma_sum_r55.stress} МПа");
-            sb.AppendLine($"Коэфф. концентрации = {sigma_sum_r55.stressConcentrat}");
-            sb.AppendLine($"Амплитуда = {sigma_sum_r55.amplitude} МПа");
-            sb.AppendLine($"[N55] = {sigma_sum_r55.cycles}");
-            sb.AppendLine($"{_loads.NumberOfCycles} >= {sigma_sum_r55.cycles}");
-            sb.AppendLine($"{GetConclusion(sigma_sum_r55.conclusion)}");
-
-            sb.AppendLine("\n- РАСЧЕТ УСЛОВИЯХ ИСПЫТАНИЙ");
-
-
-
-            return sb.ToString();
-
         }
 
         public Results GetCheckResults()
         {
             Results results = new Results();
 
+            // 1. Толщина плоской крышки
             AddPairCheck(
                 results,
                 description: "Толщина плоской крышки работающей под внутренним избыточным давлением",
@@ -163,6 +61,7 @@ namespace Billet
                 testLimit: _geometry.s_1
             );
 
+            // 2. Смятие зоны опирания
             AddPairCheck(
                 results,
                 description: "Расчет на смятие зоны опирания крышки затвора на корпус",
@@ -173,83 +72,104 @@ namespace Billet
                 testLimit: _material.Sigma_sm_20
             );
 
+            // 3. Зуб крышки в сечении I-I (срез + изгиб и циклы)
             string element = "cap_11";
+
             AddPairCheck(
                 results,
                 description: "Расчет на срез зуба крышки в сечении I-I",
-                baseName: "tau ср.1-1.",
+                baseName: "tau ср.11.",
                 unit: "МПа",
                 calcFunc: type => CheckShear(element, type, GetToothWidth(element), _geometry.s_11 - GetAddition(element, type)).stress,
                 workLimit: _material.Tau_sr_t,
                 testLimit: _material.Tau_sr_20
             );
 
-            AddPairCheck(
+            AddBendWithFatigueCheck(
                 results,
-                description: "Расчет на изгиб зуба крышки в сечении I-I",
-                baseName: "sigma н.1-1.",
-                unit: "МПа",
-                calcFunc: type => CheckBend(element, type, GetToothWidth(element), _geometry.s_11 - GetAddition(element, type), _geometry.r_1).stress,
+                stressDescription: "Расчет на изгиб зуба крышки в сечении I-I",
+                fatigueDescription: "Проверка малоцикловой прочности зуба крышки в сечении I-I",
+                stressBaseName: "sigma н.11.",
+                cyclesName: "[N]11",
+                calcFunc: type => CheckBend(element, type, GetToothWidth(element), _geometry.s_11 - GetAddition(element, type), _geometry.r_1),
                 workLimit: _material.Sigma_t,
                 testLimit: _material.Sigma_20
             );
 
+            // 4. Зуб корпуса в сечении II-II (срез + изгиб и циклы)
             element = "corpus_22";
 
             AddPairCheck(
                 results,
                 description: "Расчет на срез зуба корпуса в сечении II-II",
-                baseName: "tau ср.2-2.",
+                baseName: "tau ср.22.",
                 unit: "МПа",
                 calcFunc: type => CheckShear(element, type, GetToothWidth(element), _geometry.s_21 - GetAddition(element, type)).stress,
                 workLimit: _material.Tau_sr_t,
                 testLimit: _material.Tau_sr_20
             );
 
-            AddPairCheck(
+            AddBendWithFatigueCheck(
                 results,
-                description: "Расчет на изгиб зуба корпуса в сечении II-II",
-                baseName: "sigma н.2-2.",
-                unit: "МПа",
-                calcFunc: type => CheckBend(element, type, GetToothWidth(element), _geometry.s_21 - GetAddition(element, type), _geometry.r_5).stress,
+                stressDescription: "Расчет на изгиб зуба корпуса в сечении II-II",
+                fatigueDescription: "Проверка малоцикловой прочности зуба корпуса в сечении II-II",
+                stressBaseName: "sigma н.22.",
+                cyclesName: "[N]22",
+                calcFunc: type => CheckBend(element, type, GetToothWidth(element), _geometry.s_21 - GetAddition(element, type), _geometry.r_5),
                 workLimit: _material.Sigma_t,
                 testLimit: _material.Sigma_20
             );
 
+            // 5. Зуб корпуса в сечении III-III (изгиб и циклы)
             element = "corpus_33";
 
-            AddPairCheck(
-               results,
-               description: "Расчет на изгиб зуба корпуса в сечении III-III",
-               baseName: "sigma н.3-3.",
-               unit: "МПа",
-               calcFunc: type => CheckBend(element, type, GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - GetAddition(element, type), _geometry.r_5).stress,
-               workLimit: _material.Sigma_t,
-               testLimit: _material.Sigma_20
+            AddBendWithFatigueCheck(
+                results,
+                stressDescription: "Расчет на изгиб зуба корпуса в сечении III-III",
+                fatigueDescription: "Проверка малоцикловой прочности зуба корпуса в сечении III-III",
+                stressBaseName: "sigma н.33.",
+                cyclesName: "[N]33",
+                calcFunc: type => CheckBend(element, type, GetToothWidth(element), (_geometry.s_21 + _geometry.r_5) - GetAddition(element, type), _geometry.r_5),
+                workLimit: _material.Sigma_t,
+                testLimit: _material.Sigma_20
             );
 
+            // 6. Корпус в сечении III-IV (растяжение с изгибом и циклы)
             element = "corpus_34";
 
-            AddPairCheck(
-               results,
-               description: "Расчет на изгиб и растяжение корпуса в сечении III-IV",
-               baseName: "sigma сум.3-4.",
-               unit: "МПа",
-               calcFunc: type => CheckTensileBend(element, type, GetSectionGeometry(element, type).A, GetSectionGeometry(element).l, GetSectionGeometry(element, type).s, GetSectionGeometry(element, type).r).stress,
-               workLimit: _material.Sigma_ras_t,
-               testLimit: _material.Sigma_ras_20
+            AddBendWithFatigueCheck(
+                results,
+                stressDescription: "Расчет на изгиб и растяжение корпуса в сечении III-IV",
+                fatigueDescription: "Проверка малоцикловой прочности корпуса в сечении III-IV",
+                stressBaseName: "sigma сум.34.",
+                cyclesName: "[N]34",
+                calcFunc: type =>
+                {
+                    var geom = GetSectionGeometry(element, type);
+                    var res = CheckTensileBend(element, type, geom.A, GetSectionGeometry(element).l, geom.s, geom.r);
+                    return (res.conclusion, res.stress, res.cycles);
+                },
+                workLimit: _material.Sigma_ras_t,
+                testLimit: _material.Sigma_ras_20
             );
 
+            // 7. Корпус в сечении V-V (растяжение с изгибом и циклы)
             element = "corpus_55";
 
-            AddPairCheck(
-               results,
-               description: "Расчет на изгиб и растяжение корпуса в сечении V-V",
-               baseName: "sigma сум.5-5.",
-               unit: "МПа",
-               calcFunc: type => CheckTensileBend(element, type, GetSectionGeometry(element, type).A, GetSectionGeometry(element).l, GetSectionGeometry(element, type).s, GetSectionGeometry(element, type).r).stress,
-               workLimit: _material.Sigma_ras_t,
-               testLimit: _material.Sigma_ras_20
+            AddBendWithFatigueCheck(
+                results,
+                stressDescription: "Расчет на изгиб и растяжение корпуса в сечении V-V",
+                fatigueDescription: "Проверка малоцикловой прочности корпуса в сечении V-V",
+                stressBaseName: "sigma сум.55.",
+                cyclesName: "[N]55",
+                calcFunc: type =>
+                {
+                    var geom = GetSectionGeometry(element, type);
+                    var res = CheckTensileBend(element, type, geom.A, GetSectionGeometry(element).l, geom.s, geom.r);
+                    return (res.conclusion, res.stress, res.cycles);
+                },
+                workLimit: _material.Sigma_ras_t,
+                testLimit: _material.Sigma_ras_20
             );
 
             return results;
@@ -265,8 +185,10 @@ namespace Billet
             double testLimit)
         {
             var modes = new[]
-            { (Type: "work", Suffix: "р", Limit: workLimit),
-              (Type: "test", Suffix: "и", Limit: testLimit)};
+            {
+        (Type: "work", Suffix: "р", Limit: workLimit),
+        (Type: "test", Suffix: "и", Limit: testLimit)
+    };
 
             foreach (var mode in modes)
             {
@@ -281,6 +203,56 @@ namespace Billet
                 });
             }
         }
+
+        private void AddBendWithFatigueCheck(
+            Results results,
+            string stressDescription,
+            string fatigueDescription,
+            string stressBaseName,
+            string cyclesName,
+            Func<string, (bool conclusion, double stress, double cycles)> calcFunc,
+            double workLimit,
+            double testLimit)
+        {
+            // 1. Рабочие условия (напряжения + циклы за один вызов)
+            var workRes = calcFunc("work");
+
+            results.AddResult(new ElementResult
+            {
+                Description = stressDescription,
+                TypeLoad = "work",
+                Name = stressBaseName + "р",
+                Value = workRes.stress,
+                Limit = workLimit,
+                Unit = "МПа"
+            });
+
+            // 2. Условия испытаний (только напряжения)
+            var testRes = calcFunc("test");
+
+            results.AddResult(new ElementResult
+            {
+                Description = stressDescription,
+                TypeLoad = "test",
+                Name = stressBaseName + "и",
+                Value = testRes.stress,
+                Limit = testLimit,
+                Unit = "МПа"
+            });
+
+            // 3. Проверка малоцикловой прочности (заданное Limit <= допускаемого Value)
+            results.AddResult(new ElementResult
+            {
+                Description = fatigueDescription,
+                TypeLoad = "work",
+                Name = cyclesName,
+                Value = workRes.cycles,          // вычисленное допускаемое кол-во циклов
+                Limit = _loads.NumberOfCycles,   // заданное эксплуатационное кол-во циклов
+                Unit = "циклов",
+                IsReversed = true
+            });
+        }
+
 
 
         (bool conclusion, double stress) CheckСrumple(string type) // проверка на смятие
@@ -351,20 +323,18 @@ namespace Billet
 
         (bool conclusion, double stress, double cycles) CheckBend(string element, string type, double l, double s, double r) // проверка на изгиб
         {
-            //Console.WriteLine(s);
-
             double n = _geometry.n; // количество зубьев
 
             var geometry = GetGeomCharacter(element, l, s);
             double console = GetConsole(element);
             double sigma = Round.RoundUpToStep(GetLoad(type) * console / (geometry.Wx * n), 0.1);
-            var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
-
-            //Console.WriteLine(GetAddition(element, type));
 
             switch (type)
             {
                 case "work":
+
+                    var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
+
                     if (sigma * _concentrator.BendConcentratorRatio <= _material.Sigma_t && fatique.conclusion)
                     {
                         return (true, sigma, fatique.NumberOfCycles);
@@ -399,19 +369,12 @@ namespace Billet
             double sigma_Bend = GetLoad(type) * console / (geometry.Wx);
             double sigma = Round.RoundUpToStep(sigma_Tensile + sigma_Bend, 0.1);
 
-            //Console.WriteLine(area);
-            //Console.WriteLine(sigma_Tensile);
-            //Console.WriteLine(sigma_Bend);
-            //Console.WriteLine(element);
-            //Console.WriteLine(console);
-            //Console.WriteLine(s);
-
-            var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
-
-
             switch (type)
             {
                 case "work":
+
+                    var fatique = CheckFatique(sigma, s + GetAddition(element, type), console, r);
+
                     if (sigma * _concentrator.TensileConcentratorRatio <= _material.Sigma_ras_t && fatique.conclusion)
                     {
                         return (true, sigma, fatique.NumberOfCycles, fatique.sigma_a, fatique.alfa_sigma);
@@ -482,12 +445,6 @@ namespace Billet
             double N = Math.Floor(1 / _material.n_N * Math.Pow(_material.A * C_t / (sigma_a - B / _material.n_sigma), 2)); // допустимое число циклов
             if (N >= _loads.NumberOfCycles)
             {
-                //Console.WriteLine(B);
-                //Console.WriteLine(C_t);
-                //Console.WriteLine(alfa_sigma);
-                //Console.WriteLine(sigma_a);
-                //Console.WriteLine(s);
-                //Console.WriteLine(h);
 
                 return (true, N, sigma_a, alfa_sigma);
             }
