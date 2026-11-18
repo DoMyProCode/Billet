@@ -28,8 +28,9 @@ namespace Billet
 
             Calculations calculations = new Calculations(loads, geometry, material, concentrator, otherRatios, steps, additions);
             Results results = calculations.GetCheckResults();
-            Report report = new Report(results);
+            Report report = new Report(material, loads, geometry, otherRatios, additions, results);
             Print.PrintResults(report.GetReportText());
+            Print.PrintResults(report.GetInitialDataText());
         }
     }
 }

@@ -43,7 +43,6 @@ namespace Billet
             SelectTensileBend("corpus_34");
             SelectTensileBend("corpus_55");
             SelectCapThickness();
-
         }
 
         public Results GetCheckResults()
@@ -53,7 +52,7 @@ namespace Billet
             // 1. Толщина плоской крышки
             AddPairCheck(
                 results,
-                description: "Толщина плоской крышки работающей под внутренним избыточным давлением",
+                description: "Толщина плоской крышки",
                 baseName: "s1",
                 unit: "мм",
                 calcFunc: type => CheckCapThickness(type, _geometry.s_1).thickness,
@@ -253,8 +252,6 @@ namespace Billet
             });
         }
 
-
-
         (bool conclusion, double stress) CheckСrumple(string type) // проверка на смятие
         {
             double sigma = Round.RoundUpToStep(GetLoad(type) / GetContactArea(), 0.1);
@@ -425,9 +422,6 @@ namespace Billet
 
             if (s * _concentrator.CapConcentratorRatio <= thickness)
             {
-                //Console.WriteLine(D_p);
-                //Console.WriteLine(_geometry.R_ex * 2);
-                //Console.WriteLine(R_1 * 2);
                 return (true, s + GetAddition("cap", type));
             }
             else
@@ -794,21 +788,6 @@ namespace Billet
             double Wx = Jx / Ymax; // определение момента сопротивления сечения
             double Wy = Jy / Xmax;
 
-
-            //Console.WriteLine(Wx);
-            //Console.WriteLine(Wy);
-
-            //Console.WriteLine("------------------------------");
-            //foreach (double item in CoordinateX)
-            //{
-            //    Console.WriteLine(item);
-            //}
-            //Console.WriteLine("------------------------------");
-            //foreach (double item in CoordinateY)
-            //{
-            //    Console.WriteLine(item);
-            //}
-            //Console.WriteLine("------------------------------");
             if (A <= 0 || Jx <= 0 || Jy <= 0 || Wx <= 0 || Wy <= 0)
             {
                 return (1, 1, 1, 1, 1);
@@ -820,17 +799,6 @@ namespace Billet
 
         }
 
-        string GetConclusion(bool conclusion)
-        {
-            if (conclusion)
-            {
-                return "Условие выполнено";
-            }
-            else
-            {
-                return "Условие НЕ выполнено!!!";
-            }
-        }
         double GetAddition(string element, string type)
         {
             string group = element;

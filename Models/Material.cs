@@ -14,9 +14,10 @@ namespace Billet
             _ratios = ratios;
         }
         public Guid Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = "09Г2С";
+        public string Description { get; set; } = "Конструкционная низколегированная сталь для сварных конструкций";
         public double Rmt { get; set; } = 398.5; // предел прочности при работе на изгиб, МПа
+        public double E { get; set; } = 199000; // модуль упругости, МПа
         public double Sigma_t { get; set; } = 147.7; // допускаемое напряжение при работе на изгиб в рабочих условиях, МПа
         public double Sigma_20 { get; set; } = 222.7; // допускаемое напряжение при работе на изгиб в условиях испытаний, МПа
         public double Tau_sr_t => Round.RoundDownToStep(Sigma_t * _ratios.ShearRatio, 0.1); // допускаемое напряжение при работе на срез в рабочих условиях
