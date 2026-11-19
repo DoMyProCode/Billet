@@ -8,6 +8,8 @@ namespace Billet
 {
     public class Geometry
     {
+        public double a { get; set; } = 150; // расстояние от края корпуса до оси открывания крышки
+        public double alfa_cut { get; set; } = 0; // угол уклона резки зуба корпуса
         public double b_k { get; set; } = 5; // зазор просвета между внешним радиусом крышки и внутренним радиусом зева корпуса
         public double b_pr { get; set; } = 11; // зазор просвета между вырезом в крышке и внутренним радиусом зуба корпуса
         public double b_z { get; set; } = 20; // минимальный зазор между зубьями корпуса и крышки в открытом положении
@@ -21,8 +23,10 @@ namespace Billet
         public double f_4 { get; set; } = 60; // высота фаски зуба крышки (если зуб цепляет при открытии)
         public double f_5 { get; set; } = 0; // ширина фаски зуба корпуса (если зуб цепляет при открытии)
         public double f_6 { get; set; } = 0; // высота фаски зуба корпуса (если зуб цепляет при открытии)
+        public double f_7 { get; set; } = 2; // фаска по кругу на цилиндрической части крышки
         public double g { get; set; } = 40; // толщина хвостовика под приварку
-        public double h { get; set; } = 35; // глубина уклона зуба корпуса
+        public double h { get; set; } = 0; // глубина уклона зуба корпуса
+        public double h_ob { get; set; } = 2; // глубина обнижения крышки в зоне наплавки
         public double k_pr { get; set; } = 5; // отношение полного угла зуба к углу обнижения
         public double n { get; set; } = 16; // количество зубьев
         public double p { get; set; } = 10; // нахлест крышки на прокладку

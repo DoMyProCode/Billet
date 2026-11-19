@@ -4,6 +4,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -34,16 +35,63 @@ namespace Billet
             _steps = steps;
             _additions = additions;
 
+        }
+
+        public void SelectGeometry()
+        {
+            SelectCapGeometry();
+
+            SelectCorpusGeometry();
+
+            if (_geometry.h < _geometry.r_5)
+            {
+                double minAngleDeg = Math.Atan(_geometry.r_5 / _geometry.s_21) * (180.0 / Math.PI);
+                _geometry.alfa_cut = Round.RoundUpToStep(minAngleDeg, 1);
+                UpdateGrooveDepth();
+
+                // Пересчитываем корпус сразу после первого изменения _geometry.h, 
+                // так как глубина канавки уже увеличилась
+                SelectCorpusGeometry();
+            }
+
+            const double maxCuttingAngle = 85.0; // Защита от бесконечного цикла
+
+            while (!CheckCuttingAngle())
+            {
+                if (_geometry.alfa_cut >= maxCuttingAngle)
+                {
+                    throw new InvalidOperationException($"Не удалось подобрать угол резки: достигнут предел {maxCuttingAngle} град.");
+                }
+
+                _geometry.alfa_cut += 1;
+
+                UpdateGrooveDepth();
+                SelectCorpusGeometry();
+            }
+
+            SelectCapThickness();
+        }
+
+        private void SelectCapGeometry()
+        {
             SelectСrumple();
             SelectShear("cap_11");
             SelectBend("cap_11");
+        }
+        private void SelectCorpusGeometry()
+        {
             SelectShear("corpus_22");
             SelectBend("corpus_22");
             SelectBend("corpus_33");
             SelectTensileBend("corpus_34");
             SelectTensileBend("corpus_55");
-            SelectCapThickness();
         }
+
+        private void UpdateGrooveDepth()
+        {
+            _geometry.h = _geometry.s_21 * Math.Tan(_geometry.alfa_cut * (Math.PI / 180.0));
+        }
+
 
         public Results GetCheckResults()
         {
@@ -525,7 +573,26 @@ namespace Billet
                 _geometry.s_1 = _geometry.s_1 + _steps.CapStep;
             }
 
+            if (_geometry.s_1 < _geometry.s_11 + _geometry.r_1 + _geometry.f_7 + _geometry.h_ob)
+            {
+                _geometry.s_1 = _geometry.s_11 + _geometry.r_1 + _geometry.f_7 + _geometry.h_ob;
+            }
         }
+
+        bool CheckCuttingAngle()
+        {
+            double R = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k) + _geometry.a; // радиус движения внешенего диаметра крышки с учетом зазора b_k
+            double h_curve = R - Math.Pow(Math.Pow(R, 2) - Math.Pow(_geometry.s_21, 2), 0.5);
+            if(h_curve < _geometry.h)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
 
         public double GetLoad(string type)
         {
@@ -634,6 +701,7 @@ namespace Billet
             return (A, l, s, r);
         }
 
+
         public double GetConsole(string element)
         {
             double L = 0;
@@ -653,7 +721,7 @@ namespace Billet
                     L = Math.Max(_geometry.h, _geometry.r_5) + _geometry.b_k + 2 * (_geometry.R_ex - R_1) / 3;
                     break;
                 case "corpus_55":
-                    L = (_geometry.D_corp_ex / 2 - (_geometry.D_nom - (_geometry.R_ex + _geometry.b_k)) - _geometry.g) / 2;
+                    L = _geometry.R_ex + _geometry.b_k - _geometry.D_nom / 2;
                     break;
             }
             return L;

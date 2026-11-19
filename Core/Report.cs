@@ -112,10 +112,11 @@ namespace Billet
             sb.AppendLine(FormatRow("Наружный диаметр затвора:", "D", _geometry.D_corp_ex, "мм"));
             sb.AppendLine(FormatRow("Проходное сечение затвора:", "DN", _geometry.D_nom, "мм"));
             sb.AppendLine(FormatRow("Толщина кромки под приварку:", "g", _geometry.g, "мм"));
-            sb.AppendLine(FormatRow("Внутренний диаметр зубьев корпуса:", "Dвн", (_geometry.D_pr / 2 + _geometry.p + _geometry.b_pr + _geometry.r_2) * 2, "мм"));
+            sb.AppendLine(FormatRow("Внутренний диаметр зубьев корпуса:", "Dвн", (_geometry.D_pr / 2 + _geometry.p + _geometry.b_pr) * 2, "мм"));
             sb.AppendLine(FormatRow("Наружный диаметр зубьев крышки:", "Dнар", _geometry.R_ex * 2, "мм"));
             sb.AppendLine(FormatRow("Внешний диаметр уплотнения в рабочем положении:", "Dпр", _geometry.D_pr, "мм"));
             sb.AppendLine(FormatRow("Глубина канавки либо внутреннего уклона зуба (большее):", "h", _geometry.h, "мм"));
+            sb.AppendLine(FormatRow("Внутренний уклон зуба:", "alfa", _geometry.alfa_cut, "град"));
             sb.AppendLine(FormatRow("Количество зубьев:", "n", _geometry.n, "шт"));
 
             sb.AppendLine(FormatRow("Радиус галтели зуба крышки по верхней плоскости:", "r1", _geometry.r_1, "мм"));

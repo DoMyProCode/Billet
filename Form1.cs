@@ -27,10 +27,11 @@ namespace Billet
             Additions additions = new Additions();
 
             Calculations calculations = new Calculations(loads, geometry, material, concentrator, otherRatios, steps, additions);
+            calculations.SelectGeometry();
             Results results = calculations.GetCheckResults();
             Report report = new Report(material, loads, geometry, otherRatios, additions, results);
-            Print.PrintResults(report.GetReportText());
             Print.PrintResults(report.GetInitialDataText());
+            Print.PrintResults(report.GetReportText());
         }
     }
 }
