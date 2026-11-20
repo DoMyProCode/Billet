@@ -59,6 +59,7 @@
     <Compile Include="Models\Additions.cs" />
     <Compile Include="Models\ElementResult.cs" />
     <Compile Include="Models\Geometry.cs" />
+    <Compile Include="Models\Limits.cs" />
     <Compile Include="Models\Loads.cs" />
     <Compile Include="Models\Material.cs" />
     <Compile Include="Models\Ratios.cs" />

@@ -19,13 +19,14 @@ namespace Billet
         OtherRatios _otherRatios;
         Steps _steps;
         Additions _additions;
+        Limits _limits;
 
         double pi = Math.PI;
         double R_in;
         double R_1; // внутренний радиус контакта = внутренний радиус зубьев корпуса + r_2 (радиус скругления зуба кропуса)
         double alfa;
         double alfa_2;
-        public Calculations(Loads loads, Geometry geometry, Material material, ConcentratorRatios concentrator, OtherRatios otherRatios, Steps steps, Additions additions)
+        public Calculations(Loads loads, Geometry geometry, Material material, ConcentratorRatios concentrator, OtherRatios otherRatios, Steps steps, Additions additions, Limits limits)
         {
             _geometry = geometry;
             _material = material;
@@ -34,42 +35,64 @@ namespace Billet
             _otherRatios = otherRatios;
             _steps = steps;
             _additions = additions;
+            _limits = limits;
 
         }
 
-        public void SelectGeometry()
+        public void SelectGeometry(string ClosureType)
         {
-            SelectCapGeometry();
-
-            SelectCorpusGeometry();
-
-            if (_geometry.h < _geometry.r_5)
+            switch (ClosureType)
             {
-                double minAngleDeg = Math.Atan(_geometry.r_5 / _geometry.s_21) * (180.0 / Math.PI);
-                _geometry.alfa_cut = Round.RoundUpToStep(minAngleDeg, 1);
-                UpdateGrooveDepth();
+                case "horizontal":
 
-                // Пересчитываем корпус сразу после первого изменения _geometry.h, 
-                // так как глубина канавки уже увеличилась
-                SelectCorpusGeometry();
+                    SelectCapGeometry();
+                    SelectCorpusGeometry();
+
+                    if (_geometry.h < _geometry.r_5)
+                    {
+                        double minAngleDeg = Math.Atan(_geometry.r_5 / _geometry.s_21) * (180.0 / Math.PI);
+                        _geometry.alfa_cut = Round.RoundUpToStep(minAngleDeg, 1);
+                        UpdateGrooveDepth();
+
+                        // Пересчитываем корпус сразу после первого изменения _geometry.h, 
+                        // так как глубина канавки уже увеличилась
+                        SelectCorpusGeometry();
+                    }
+
+                    const double maxCuttingAngle = 85.0; // Защита от бесконечного цикла
+
+                    while (!CheckCuttingAngle())
+                    {
+                        if (_geometry.alfa_cut >= maxCuttingAngle)
+                        {
+                            throw new InvalidOperationException($"Не удалось подобрать угол резки: достигнут предел {maxCuttingAngle} град.");
+                        }
+
+                        _geometry.alfa_cut += 1;
+
+                        UpdateGrooveDepth();
+                        SelectCorpusGeometry();
+                    }
+
+                    SelectCapThickness();
+                    break;
+
+                case "vertical":
+
+                    if (_geometry.h < _geometry.r_5)
+                    {
+                        double minAngleDeg = Math.Atan(_geometry.r_5 / _geometry.s_21) * (180.0 / Math.PI);
+                        _geometry.alfa_cut = Round.RoundUpToStep(minAngleDeg, 1);
+                        UpdateGrooveDepth();
+                    }
+
+                    SelectCapGeometry();
+                    SelectCorpusGeometry();
+                    SelectCapThickness();
+                    break;
+
+                default: break;
             }
-
-            const double maxCuttingAngle = 85.0; // Защита от бесконечного цикла
-
-            while (!CheckCuttingAngle())
-            {
-                if (_geometry.alfa_cut >= maxCuttingAngle)
-                {
-                    throw new InvalidOperationException($"Не удалось подобрать угол резки: достигнут предел {maxCuttingAngle} град.");
-                }
-
-                _geometry.alfa_cut += 1;
-
-                UpdateGrooveDepth();
-                SelectCorpusGeometry();
-            }
-
-            SelectCapThickness();
         }
 
         private void SelectCapGeometry()
@@ -496,6 +519,20 @@ namespace Billet
             }
         }
 
+        bool CheckCuttingAngle()
+        {
+            double R = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _limits.Clearances) + _geometry.a; // радиус движения внешенего диаметра крышки с учетом зазора b_k
+            double h_curve = R - Math.Pow(Math.Pow(R, 2) - Math.Pow(_geometry.s_21, 2), 0.5);
+            if (h_curve < _geometry.h)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         void SelectСrumple() // подбор внешнего радиуса зубьев крышки
         {
             while (!CheckСrumple("work").conclusion || !CheckСrumple("test").conclusion)
@@ -579,22 +616,7 @@ namespace Billet
             }
         }
 
-        bool CheckCuttingAngle()
-        {
-            double R = _geometry.D_corp_ex / 2 - (_geometry.R_ex + _geometry.b_k) + _geometry.a; // радиус движения внешенего диаметра крышки с учетом зазора b_k
-            double h_curve = R - Math.Pow(Math.Pow(R, 2) - Math.Pow(_geometry.s_21, 2), 0.5);
-            if(h_curve < _geometry.h)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-
-        public double GetLoad(string type)
+         public double GetLoad(string type)
         {
             double S = Round.RoundUpToStep(pi * _geometry.D_pr * _geometry.D_pr / 4, 1); // площадь крышки находящаяся под давлением
             double F = 0; // сила на крышке от давления, Н

@@ -8,6 +8,7 @@ namespace Billet
 {
     public class Geometry
     {
+        public string ClosureType { get; set; } = "horizontal"; // тип затвора
         public double a { get; set; } = 150; // расстояние от края корпуса до оси открывания крышки
         public double alfa_cut { get; set; } = 0; // угол уклона резки зуба корпуса
         public double b_k { get; set; } = 5; // зазор просвета между внешним радиусом крышки и внутренним радиусом зева корпуса

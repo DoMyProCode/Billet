@@ -25,9 +25,10 @@ namespace Billet
             ConcentratorRatios concentrator = new ConcentratorRatios();
             OtherRatios otherRatios = new OtherRatios();
             Additions additions = new Additions();
+            Limits limits = new Limits();
 
-            Calculations calculations = new Calculations(loads, geometry, material, concentrator, otherRatios, steps, additions);
-            calculations.SelectGeometry();
+            Calculations calculations = new Calculations(loads, geometry, material, concentrator, otherRatios, steps, additions, limits);
+            calculations.SelectGeometry(geometry.ClosureType);
             Results results = calculations.GetCheckResults();
             Report report = new Report(material, loads, geometry, otherRatios, additions, results);
             Print.PrintResults(report.GetInitialDataText());
